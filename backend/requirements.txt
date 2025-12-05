@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+python-dotenv
+passlib[bcrypt]
+python-jose[cryptography]
+better-auth
+psycopg2-binary
+qdrant-client
+sentence-transformers
+langchain
+langchain-community
+tiktoken
