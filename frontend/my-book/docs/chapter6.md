@@ -1,7 +1,7 @@
 ---
 id: chapter6
-title: Chapter 6: Human-Robot Interaction - Collaboration, Trust, and Acceptance
-subtitle: Building Seamless Relationships with Embodied AI
+title: "Chapter 6: Human-Robot Interaction - Collaboration, Trust, and Acceptance"
+subtitle: "Building Seamless Relationships with Embodied AI"
 ---
 
 ## Introduction

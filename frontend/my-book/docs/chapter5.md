@@ -1,7 +1,7 @@
 ---
 id: chapter5
-title: Chapter 5: Locomotion and Manipulation - Mastering the Physical World
-subtitle: The Art and Science of Humanoid Movement and Interaction
+title: "Chapter 5: Locomotion and Manipulation - Mastering the Physical World"
+subtitle: "The Art and Science of Humanoid Movement and Interaction"
 ---
 
 ## Introduction

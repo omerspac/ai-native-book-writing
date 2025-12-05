@@ -1,7 +1,7 @@
 ---
 id: chapter10
-title: Chapter 10: Ethical Frameworks and Governance for Embodied AI
-subtitle: Shaping the Responsible Future of Physical AI and Humanoid Robotics
+title: "Chapter 10: Ethical Frameworks and Governance for Embodied AI"
+subtitle: "Shaping the Responsible Future of Physical AI and Humanoid Robotics"
 ---
 
 ## Introduction

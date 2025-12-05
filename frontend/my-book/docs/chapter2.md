@@ -1,7 +1,7 @@
 ---
 id: chapter2
-title: Chapter 2: Core AI for Embodied Systems - Perception, Cognition, and Control
-subtitle: The Intelligent Brain Behind the Humanoid Body
+title: "Chapter 2: Core AI for Embodied Systems - Perception, Cognition, and Control"
+subtitle: "The Intelligent Brain Behind the Humanoid Body"
 ---
 
 ## Introduction

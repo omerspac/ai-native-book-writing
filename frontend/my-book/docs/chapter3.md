@@ -1,7 +1,7 @@
 ---
 id: chapter3
-title: Chapter 3: Challenges and Ethical Considerations in Humanoid Robotics
-subtitle: Navigating the Complexities of Embodied AI
+title: "Chapter 3: Challenges and Ethical Considerations in Humanoid Robotics"
+subtitle: "Navigating the Complexities of Embodied AI"
 ---
 
 ## Introduction

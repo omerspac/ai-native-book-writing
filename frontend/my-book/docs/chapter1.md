@@ -1,7 +1,7 @@
 ---
 id: chapter1
-title: Chapter 1: The Convergence - Physical AI and Humanoid Robotics
-subtitle: Embodied Intelligence and the Future of Interaction
+title: "Chapter 1: The Convergence - Physical AI and Humanoid Robotics"
+subtitle: "Embodied Intelligence and the Future of Interaction"
 ---
 
 ## Introduction
