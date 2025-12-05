@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkmy_book=globalThis.webpackChunkmy_book||[]).push([[1804],{2183:o=>{o.exports=JSON.parse('{"metadata":{"permalink":"/ai-native-book-writing/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":4,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
