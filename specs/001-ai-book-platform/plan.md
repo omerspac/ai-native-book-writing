@@ -1,8 +1,8 @@
 # Implementation Plan: AI-Native Book Platform
 
-**Feature**: [AI-Native Book Platform](./spec.md)
-**Version**: 1.0
-**Status**: In Progress
+**Feature**: [AI-Native Book Platform](./spec.md)  
+**Version**: 1.0  
+**Status**: Maintenance
 
 ---
 
@@ -10,141 +10,163 @@
 
 This plan outlines the development of the AI-Native Book Platform, a system designed to generate technical books using AI, provide interactive RAG-based chat, and deliver personalized content.
 
-The proposed architecture consists of:
-- **Frontend**: A Docusaurus-based static site for displaying book content. This will be enhanced with custom React componentsS for authentication, chat, and other interactive features.
-- **Backend**: A FastAPI application serving as the system's core. It will manage user authentication, orchestrate AI sub-agents, handle chat requests, and serve personalized content.
-- **AI Layer**: A suite of Gemini-powered sub-agents, invoked via the backend, for specialized tasks: content generation (Book Writer), chat optimization (RAG Optimizer), translation (Translator), and content personalization (Personalization Agent).
-- **Data Layer**:
-    - **User Data**: Neon Serverless Postgres for storing user profiles, authentication details, and personalization survey responses.
-    - **Vector Embeddings**: Qdrant Cloud for storing and retrieving vector embeddings of the book content to power the RAG chatbot.
-- **Authentication**: Better-Auth will be integrated into the FastAPI backend to manage user signup and sign-in.
+**Architecture**:
+
+- **Frontend**: Docusaurus-based static site displaying book content, enhanced with React components for authentication, chat, personalization, and translation.  
+- **Backend**: FastAPI application managing user authentication, orchestrating AI sub-agents, handling chat requests, and serving personalized content.  
+- **AI Layer**: Gemini-powered sub-agents: Book Writer, RAG Optimizer, Translator, and Personalization Agent.  
+- **Data Layer**:  
+  - **User Data**: Neon Serverless Postgres.  
+  - **Vector Embeddings**: Qdrant Cloud for RAG chatbot.  
+- **Authentication**: Better-Auth integrated into the backend.  
+
+---
 
 ## 2. Constitution Check
 
-This plan has been reviewed against the `constitution.md` document.
+- **[✅] Code Quality**: PEP 8 (backend), standard frontend style guides.  
+- **[✅] Testing Standards**: Unit & integration tests for each phase (>80% coverage).  
+- **[✅] UX Consistency**: Docusaurus provides consistent UI; custom components follow unified design.  
+- **[✅] Performance Requirements**: API latency <500ms; chat responses <5s.  
 
-- **[✅] Code Quality**: Adherence to PEP 8 for the FastAPI backend and standard frontend style guides is required. All PRs will undergo review.
-- **[✅] Testing Standards**: Each phase will include the development of unit and integration tests. The goal is to achieve >80% coverage for all new backend logic.
-- **[✅] User Experience Consistency**: Docusaurus provides a consistent UI foundation. Custom components will follow a unified design language.
-- **[✅] Performance Requirements**: API endpoints will be designed for low latency (<500ms p95). Chat responses are expected within 5 seconds.
+---
 
-## 3. Phased Execution Plan
+## 3. Phased Execution Plan (8 Phases)
 
-### Phase 1: Foundation & Core Backend (1-2 weeks)
+### **Phase 1: Chapters 1–3**
 
-**Goal**: Establish the project's foundation, including the backend server, user database, and authentication system.
+**Goal**: Generate and display the first three chapters.  
 
-**Tech Stack**: FastAPI, Neon Postgres, Better-Auth, Pydantic, Docker.
+**Tasks**:
 
-**Key Tasks**:
-1.  Initialize FastAPI backend project with a modular structure.
-2.  Define Pydantic models for `User` and `UserProfileSurvey`.
-3.  Integrate Better-Auth for user signup and sign-in endpoints.
-4.  Set up the Neon Serverless Postgres database and connect it to the FastAPI backend using an ORM (e.g., SQLAlchemy).
-5.  Create a `UserRepository` for CRUD operations on user data.
-6.  Implement basic unit tests for authentication endpoints and user repository.
-7.  Containerize the FastAPI application using Docker for consistent development and deployment environments.
+- Generate chapters 1–3 with Book Writer sub-agent (Gemini).  
+- Save as Markdown in Docusaurus `docs/`.  
+- Verify proper rendering.  
 
-**Exit Criteria**:
-- Users can successfully sign up, log in, and log out.
-- User data is correctly persisted in the Neon Postgres database.
-- The project is containerized and has a basic CI pipeline for running tests.
+**Exit Criteria**: Chapters 1–3 appear correctly in the frontend.
 
-### Phase 2: AI Content Generation & Frontend Scaffolding (1 week)
+---
 
-**Goal**: Implement the initial AI book generation logic and set up the Docusaurus frontend to display it.
+### **Phase 2A: Chapters 4–7**  
+### **Phase 2B: Chapters 7–10**
 
-**Tech Stack**: Gemini CLI, Docusaurus, React.
+**Goal**: Complete the book content for remaining chapters.  
 
-**Key Tasks**:
-1.  Set up a new Docusaurus project.
-2.  Develop a "Book Writer" sub-agent (as a Python module) that uses the Gemini API to generate a chapter of a book based on a prompt.
-3.  Create a CLI command or script to invoke the Book Writer agent and save the output as a Markdown file in the Docusaurus project directory.
-4.  Customize the Docusaurus theme and navigation to support a book structure.
-5.  Manually generate a sample chapter to verify the display and formatting on the Docusaurus site.
+**Tasks**:
 
-**Exit Criteria**:
-- A sample book chapter can be generated via an AI agent.
-- The generated Markdown file is correctly rendered by the Docusaurus frontend.
+- Generate chapters 4–10 with Book Writer sub-agent.  
+- Verify all chapters render in correct order in Docusaurus.  
 
-### Phase 3: RAG Chatbot & Vector Search (2 weeks)
+**Exit Criteria**: Chapters 4–10 appear correctly.
 
-**Goal**: Implement the RAG-based chatbot for answering questions on the book's content.
+---
 
-**Tech Stack**: Qdrant, FastAPI, Gemini.
+### **Phase 3A: RAG Backend Skeleton Setup**  
+### **Phase 3B: Neon Postgres Setup**  
+### **Phase 3C: Qdrant Embedding Pipeline**  
+### **Phase 3D: RAG API Endpoints**
 
-**Key Tasks**:
-1.  Set up a free-tier Qdrant Cloud instance.
-2.  Create a "Content Pipeline" service that:
-    - Ingests Markdown content from the book.
-    - Chunks the text into manageable pieces.
-    - Generates vector embeddings for each chunk using a Gemini embedding model.
-    - Stores the chunks and their embeddings in Qdrant.
-3.  Create a `/chat` endpoint in the FastAPI backend that:
-    - Takes a user's question.
-    - Generates an embedding for the question.
-    - Queries Qdrant to find the most relevant text chunks from the book.
-    - Passes the question and the retrieved chunks to a Gemini model to generate a conversational answer.
-4.  Implement a basic chat interface component in the Docusaurus frontend.
-5.  Integrate the chat component with the backend `/chat` endpoint.
+**Goal**: Build RAG-based Q&A functionality.  
 
-**Exit Criteria**:
-- The chatbot can successfully answer questions based on the content of the generated book.
-- The chat interface is functional on the Docusaurus website.
+**Tasks**:
 
-### Phase 4: Personalization & Translation (1-2 weeks)
+- Setup backend skeleton for RAG.  
+- Configure Neon Postgres database.  
+- Ingest book content into Qdrant, generate embeddings via Gemini.  
+- Create `/chat` endpoints to query book content.  
+- Frontend chat component integration.  
 
-**Goal**: Add content personalization and one-click Urdu translation.
+**Exit Criteria**: Chatbot answers questions based on book content.
 
-**Tech Stack**: FastAPI, Gemini.
+---
 
-**Key Tasks**:
-1.  Develop a "Personalization Agent" that takes a chapter's content and a user's profile (e.g., "Beginner") and modifies the text accordingly.
-2.  Create a `/chapters/{chapter_id}/personalized` endpoint that returns the personalized version of a chapter for the currently authenticated user.
-3.  Develop a "Translator Agent" that translates a given text block into Urdu.
-4.  Create a `/translate` endpoint that takes text content and returns the Urdu translation.
-5.  Update the Docusaurus frontend to:
-    - Fetch personalized content when a user is logged in.
-    - Add a "Translate to Urdu" button that calls the translation endpoint and replaces the content on the page.
+### **Phase 4: Selected-text Q&A System**
 
-**Exit Criteria**:
-- Logged-in users see chapter content tailored to their background survey responses.
-- The "Translate to Urdu" button successfully translates and displays chapter content in RTL format.
+**Goal**: Enable question-asking on highlighted text.  
 
-### Phase 5: UI/UX Polish & Deployment (1 week)
+**Tasks**:
 
-**Goal**: Refine the user experience and deploy the full application.
+- Frontend component for text selection.  
+- Backend endpoint for selected text + question.  
+- RAG agent returns context-aware answers.  
 
-**Tech Stack**: GitHub Actions, GitHub Pages, Cloud Service (Render/Vercel).
+**Exit Criteria**: Users can ask questions on selected text.
 
-**Key Tasks**:
-1.  Refine the UI/UX of the chat interface, authentication flow, and overall site design.
-2.  Ensure seamless integration between all features.
-3.  Create a GitHub Actions workflow to automatically deploy the Docusaurus frontend to GitHub Pages on pushes to the `main` branch.
-4.  Create a second GitHub Actions workflow to build and deploy the containerized FastAPI backend to a cloud service like Render or Vercel.
-5.  Conduct end-to-end testing of the deployed application.
+---
 
-**Exit Criteria**:
-- The application is publicly accessible.
-- Deployment pipelines are automated.
-- All core features are functional in the production environment.
+### **Phase 5: Auth + Background Survey**
+
+**Goal**: Implement authentication and user profiling.  
+
+**Tasks**:
+
+- Better-Auth integration.  
+- Collect user background survey data.  
+- Persist data in Neon Postgres.  
+
+**Exit Criteria**: Users can sign up, log in, and submit survey.
+
+---
+
+### **Phase 6: Personalization System**
+
+**Goal**: Personalize chapter content based on survey responses.  
+
+**Tasks**:
+
+- Personalization Agent modifies chapters per user profile.  
+- `/chapters/{chapter_id}/personalized` endpoint returns tailored content.  
+- Frontend displays personalized content for logged-in users.  
+
+**Exit Criteria**: Personalized content is displayed correctly.
+
+---
+
+### **Phase 7: Urdu Translation**
+
+**Goal**: Add one-click Urdu translation.  
+
+**Tasks**:
+
+- Translator Agent converts text to Urdu.  
+- `/translate` endpoint returns translated content.  
+- Frontend button triggers translation and displays RTL content.  
+
+**Exit Criteria**: Chapters can be translated to Urdu on demand.
+
+---
+
+### **Phase 8: Deployment**
+
+**Goal**: Deploy full platform.  
+
+**Tasks**:
+
+- Deploy frontend to GitHub Pages.  
+- Deploy backend container to Render/Vercel.  
+- Test end-to-end functionality.  
+
+**Exit Criteria**: Fully functional application publicly accessible.
+
+---
 
 ## 4. Risk Analysis & Mitigation
 
-- **Risk 1 (High):** AI-generated content is low-quality or inconsistent.
-  - **Mitigation:** Implement a human-in-the-loop review process for each chapter. Develop strong, iterative prompting strategies for the Book Writer agent.
-- **Risk 2 (Medium):** Integration conflict between the chosen Chat UI library and the Gemini model.
-  - **Mitigation:** Per the resolved specification, the UI library will be prioritized. The backend will be adapted, or if necessary, an alternative AI model will be explored to ensure compatibility.
-- **Risk 3 (Low):** Cost overruns on cloud services.
-  - **Mitigation:** Start with the free tiers for all services (Qdrant, Neon). Implement budget alerts and regularly monitor usage dashboards.
+- **High:** Low-quality AI content → Use human review & strong prompts.  
+- **Medium:** Chat UI conflicts with Gemini → Adjust UI library or agent logic.  
+- **Low:** Cloud service cost overruns → Use free tiers & monitor usage.  
 
-## 5. Stretch Goals ("Bonus Marks")
+---
 
-- **UI for Plan Management**: A user interface where authors can create, edit, and manage the execution "Plans" for the AI agents.
-- **Real-time Chat Feedback**: Allow users to give a thumbs-up/thumbs-down on chat responses to create a feedback loop for improving the RAG agent.
-- **Multi-language Support**: Extend the translation feature to support more languages.
+## 5. Stretch Goals
+
+- UI for plan management.  
+- Real-time chat feedback (thumbs up/down).  
+- Multi-language support beyond Urdu.  
+
+---
 
 ## 6. Deployment Strategy
 
-- **Frontend (Docusaurus)**: Deployed as a static site on **GitHub Pages**. A GitHub Actions workflow will trigger on merges to `main`, build the Docusaurus project, and push the static files to the `gh-pages` branch.
-- **Backend (FastAPI)**: Deployed as a containerized web service on **Render** (or a similar PaaS). A second GitHub Actions workflow will build the Docker image, push it to a container registry (like Docker Hub or GitHub Container Registry), and trigger a deployment on Render.
+- **Frontend:** GitHub Pages, automated via GitHub Actions.  
+- **Backend:** Containerized FastAPI deployed to Render/Vercel.  
