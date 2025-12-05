@@ -19,6 +19,7 @@ const config: Config = {
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/ai-native-book-writing/',
+  homepage: 'https://OmerGov.github.io/ai-native-book-writing/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -145,7 +146,7 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
-  scripts: ['/ai-native-book-writing/js/askQuestion.js'],
+  scripts: ['/ai-native-book-writing/js/interactivity.js'],
 };
 
 export default config;

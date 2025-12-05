@@ -28,3 +28,9 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Custom CSS for RTL (Right-to-Left) text */
+.rtl-text {
+  direction: rtl;
+  text-align: right;
+}
