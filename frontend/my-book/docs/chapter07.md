@@ -1,6 +1,6 @@
 ---
-id: chapter7
-title: "Chapter 7: Future Directions and Societal Impact of Physical AI"
+id: chapter07
+title: "Chapter 07: Future Directions and Societal Impact of Physical AI"
 subtitle: "Navigating the Ethical and Transformative Landscape of Embodied Intelligence"
 ---
 

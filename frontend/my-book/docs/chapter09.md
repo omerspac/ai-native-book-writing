@@ -1,6 +1,6 @@
 ---
-id: chapter9
-title: "Chapter 9: The Future of Human-Robot Collaboration - Symbiosis and Integration"
+id: chapter09
+title: "Chapter 09: The Future of Human-Robot Collaboration - Symbiosis and Integration"
 subtitle: "Towards a Seamless Partnership with Embodied AI"
 ---
 

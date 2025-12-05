@@ -1,6 +1,6 @@
 ---
-id: chapter8
-title: "Chapter 8: Applications of Humanoid Robotics - Industry, Healthcare, and Beyond"
+id: chapter08
+title: "Chapter 08: Applications of Humanoid Robotics - Industry, Healthcare, and Beyond"
 subtitle: "Transforming Sectors with Embodied Intelligent Systems"
 ---
 

@@ -1,6 +1,6 @@
 ---
-id: chapter4
-title: "Chapter 4: Designing Humanoid Morphology and Actuation"
+id: chapter04
+title: "Chapter 04: Designing Humanoid Morphology and Actuation"
 subtitle: "Engineering the Physical Form for Embodied Intelligence"
 ---
 
