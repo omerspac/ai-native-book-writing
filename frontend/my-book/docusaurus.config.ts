@@ -15,15 +15,17 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://OmerGov.github.io',
+  url: 'https://omerspac.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/ai-native-book-writing/',
-  homepage: 'https://OmerGov.github.io/ai-native-book-writing/',
+  customFields: {
+    homepage: 'https://omerspac.github.io/ai-native-book-writing/',
+  },
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'OmerGov', // Usually your GitHub org/user name.
+  organizationName: 'omerspac', // Usually your GitHub org/user name.
   projectName: 'ai-native-book-writing', // Usually your repo name.
 
   onBrokenLinks: 'throw',
@@ -45,7 +47,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/OmerGov/ai-native-book-writing/tree/main/',
+            'https://github.com/omerspac/ai-native-book-writing/tree/main/',
         },
         blog: {
           showReadingTime: true,
@@ -56,7 +58,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/OmerGov/ai-native-book-writing/tree/main/',
+            'https://github.com/omerspac/ai-native-book-writing/tree/main/',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
@@ -90,7 +92,7 @@ const config: Config = {
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/OmerGov/ai-native-book-writing',
+          href: 'https://github.com/omerspac/ai-native-book-writing',
           label: 'GitHub',
           position: 'right',
         },
@@ -134,7 +136,7 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/OmerGov/ai-native-book-writing',
+              href: 'https://github.com/omerspac/ai-native-book-writing',
             },
           ],
         },
