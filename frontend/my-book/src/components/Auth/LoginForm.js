@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '@site/src/auth/AuthContext';
 
-function LoginForm() {
+export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -15,10 +15,12 @@ function LoginForm() {
 
     try {
       await login(email, password);
-      // Redirect is handled by AuthContext
+      // Redirect is now handled by AuthContext on successful login
     } catch (err) {
+      // Display error message to the user
       setError(err.message);
-      alert(`Login Failed: ${err.message}`); // Show alert on error
+      // Optionally use an alert for more immediate feedback
+      // alert(`Login Failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -26,8 +28,12 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit}>
-      {error && <div className="alert alert--danger">{error}</div>}
-      <div className="margin-bottom--md">
+      {error && (
+        <div className="alert alert--danger" role="alert">
+          {error}
+        </div>
+      )}
+      <div className="form-field">
         <label htmlFor="email">Email</label>
         <input
           type="email"
@@ -36,9 +42,10 @@ function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
         />
       </div>
-      <div className="margin-bottom--md">
+      <div className="form-field">
         <label htmlFor="password">Password</label>
         <input
           type="password"
@@ -47,13 +54,15 @@ function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="current-password"
         />
       </div>
-      <button type="submit" className="button button--primary button--block" disabled={loading}>
+      <button
+        type="submit"
+        className="button button--primary button--block auth-submit-button"
+        disabled={loading}>
         {loading ? 'Logging in...' : 'Login'}
       </button>
     </form>
   );
 }
-
-export default LoginForm;

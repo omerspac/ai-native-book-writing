@@ -2,18 +2,19 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import LoginForm from '../components/Auth/LoginForm';
-import '../css/auth.css'; // Import the new CSS
+import '../css/auth.css';
 
-function Login() {
+export default function Login() {
   return (
     <Layout title="Login" description="Log in to the AI-Native Book Platform">
       <main className="auth-container">
         <div className="auth-card">
           <div className="auth-form-header">
-            <h1>Access Your Account</h1>
+            <h1>Welcome Back</h1>
+            <p>Access your personalized AI-Native Book experience.</p>
           </div>
           <LoginForm />
-          <div className="text--center margin-top--lg">
+          <div className="auth-footer">
             <p>
               Don't have an account? <Link to="/signup">Sign Up</Link>
             </p>
@@ -23,5 +24,3 @@ function Login() {
     </Layout>
   );
 }
-
-export default Login;

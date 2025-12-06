@@ -3,44 +3,51 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
 const AuthContext = createContext(null);
 
+// This component provides the auth context to its children.
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const { siteConfig } = useDocusaurusContext();
-  const backendUrl = siteConfig.customFields.backendUrl;
-  const baseUrl = siteConfig.baseUrl;
+  const { backendUrl, baseUrl } = siteConfig.customFields;
 
+  // Load user from localStorage token on initial component mount
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('access_token');
       if (token) {
         try {
           const response = await fetch(`${backendUrl}/api/v1/users/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
           if (response.ok) {
             const userData = await response.json();
             setUser(userData);
           } else {
+            // Token is invalid, remove it
             localStorage.removeItem('access_token');
           }
         } catch (error) {
-          console.error('Failed to fetch user data:', error);
+          console.error('Failed to fetch user data on load:', error);
           localStorage.removeItem('access_token');
         }
       }
       setLoading(false);
     };
+
     loadUser();
   }, [backendUrl]);
 
+  // Login function
   const login = async (email, password) => {
+    // FastAPI's OAuth2PasswordRequestForm expects 'username' and 'password'
+    const formData = new URLSearchParams();
+    formData.append('username', email);
+    formData.append('password', password);
+
     const response = await fetch(`${backendUrl}/api/v1/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: email, password: password }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData,
     });
 
     if (!response.ok) {
@@ -50,19 +57,21 @@ export const AuthProvider = ({ children }) => {
 
     const data = await response.json();
     localStorage.setItem('access_token', data.access_token);
-
+    
+    // Fetch user profile and update state
     const userResponse = await fetch(`${backendUrl}/api/v1/users/me`, {
-        headers: { 'Authorization': `Bearer ${data.access_token}` },
+      headers: { Authorization: `Bearer ${data.access_token}` },
     });
     if (userResponse.ok) {
-        const userData = await userResponse.json();
-        setUser(userData);
-        window.location.href = baseUrl; // Redirect on success
+      const userData = await userResponse.json();
+      setUser(userData);
+      window.location.href = siteConfig.baseUrl; // Redirect to homepage
     } else {
-        throw new Error('Failed to fetch user after login');
+      throw new Error('Failed to fetch user profile after login.');
     }
   };
 
+  // Signup function
   const signup = async (email, password, profile) => {
     const response = await fetch(`${backendUrl}/api/v1/auth/signup`, {
       method: 'POST',
@@ -75,14 +84,15 @@ export const AuthProvider = ({ children }) => {
       throw new Error(errorData.detail || 'Signup failed');
     }
 
-    // After signup, log the user in to get a token
+    // After a successful signup, automatically log the user in
     await login(email, password);
   };
 
+  // Logout function
   const logout = () => {
     localStorage.removeItem('access_token');
     setUser(null);
-    window.location.href = baseUrl; // Redirect to home page
+    window.location.href = siteConfig.baseUrl; // Redirect to homepage
   };
 
   const authValue = { user, loading, login, signup, logout };
@@ -94,4 +104,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Custom hook to use the auth context
+export const useAuth = () => {
+  return useContext(AuthContext);
+};

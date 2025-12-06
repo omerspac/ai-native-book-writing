@@ -2,8 +2,8 @@ import React, { type ReactNode, useState, useEffect } from 'react';
 import DocItem from '@theme-original/DocItem';
 import type DocItemType from '@theme/DocItem';
 import type { WrapperProps } from '@docusaurus/types';
-import { useAuth } from '../../auth/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '@site/src/auth/AuthContext';
+import { useLanguage } from '@site/src/context/LanguageContext';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
@@ -43,7 +43,11 @@ export default function DocItemWrapper(props: Props): ReactNode {
     const fetchRawContent = async () => {
       setIsLoading(prev => ({ ...prev, raw: true }));
       try {
-        const contentPath = docFilePath.replace(/^@site/, '');
+        // Docusaurus serves static files from the 'static' directory.
+        // We construct the path to fetch the raw .md file.
+        // docFilePath looks like @site/docs/chapter01.md, we need /docs/chapter01.md relative to base URL
+        const contentPath = docFilePath.replace(/^@site/, ''); 
+        // Ensure no double slashes if baseUrl ends with a slash
         const fetchUrl = `${siteConfig.baseUrl.replace(/\/$/, '')}${contentPath}`;
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`Failed to fetch raw content: ${response.statusText}`);
@@ -56,7 +60,7 @@ export default function DocItemWrapper(props: Props): ReactNode {
       }
     };
 
-    if (user) {
+    if (user) { // Only fetch raw content if user is logged in
       fetchRawContent();
     }
   }, [docFilePath, user, siteConfig.baseUrl]);
@@ -146,51 +150,71 @@ export default function DocItemWrapper(props: Props): ReactNode {
   };
 
   // --- Render Logic ---
-  if (authLoading) {
-    return <div>Loading authentication...</div>;
-  }
-  
-  if (!user) {
-    return (
-      <div className="hero hero--primary" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="container text--center">
-          <h1 className="hero__title">Access Denied</h1>
-          <p className="hero__subtitle">You must be logged in to view this content.</p>
-          <Link className="button button--secondary button--lg" to="/login">Login to continue</Link>
-        </div>
-      </div>
-    );
-  }
+  // If not authenticated, always render DocItem, but cover it with an access denied message.
+  // This allows Docusaurus to build the site without broken link errors.
+  const renderAccessDeniedOverlay = !user && !authLoading;
 
-  let contentToShow = <DocItem {...props} />;
+  let contentToDisplay = null;
   if (isTranslated) {
-    contentToShow = <ReactMarkdown remarkPlugins={[remarkGfm]}>{translatedContent}</ReactMarkdown>;
+    contentToDisplay = <ReactMarkdown remarkPlugins={[remarkGfm]}>{translatedContent}</ReactMarkdown>;
   } else if (activeView === 'personalized') {
-    contentToShow = <ReactMarkdown remarkPlugins={[remarkGfm]}>{personalizedContent}</ReactMarkdown>;
+    contentToDisplay = <ReactMarkdown remarkPlugins={[remarkGfm]}>{personalizedContent}</ReactMarkdown>;
+  } else {
+    contentToDisplay = <DocItem {...props} />;
   }
 
   return (
     <>
-      <div className="margin-bottom--md button-group">
-        {activeView !== 'original' && (
-          <button className="button button--secondary button--sm" onClick={handleShowOriginal} disabled={isLoading.personalization || isLoading.translation}>
-            Show Original
-          </button>
-        )}
-        {activeView === 'original' && (
-           <button className="button button--primary button--sm" onClick={handlePersonalize} disabled={isLoading.personalization || isLoading.raw}>
-            {isLoading.personalization ? 'Personalizing...' : 'Personalize Chapter'}
-          </button>
-        )}
-      </div>
+      {/* Buttons for personalization and translation */}
+      {user && ( // Only show buttons if user is logged in
+        <div className="margin-bottom--md button-group">
+          {activeView !== 'original' && (
+            <button className="button button--secondary button--sm" onClick={handleShowOriginal} disabled={isLoading.personalization || isLoading.translation}>
+              Show Original
+            </button>
+          )}
+          {activeView === 'original' && (
+            <button className="button button--primary button--sm" onClick={handlePersonalize} disabled={isLoading.personalization || isLoading.raw}>
+              {isLoading.personalization ? 'Personalizing...' : 'Personalize Chapter'}
+            </button>
+          )}
+        </div>
+      )}
 
       {error && <div className="alert alert--danger margin-top--sm">{error}</div>}
 
-      <div className={clsx('markdown', isTranslated && 'rtl-content')}>
-        {isLoading.raw || (isTranslated && isLoading.translation) ? (
-          <div>Loading content...</div>
-        ) : (
-          contentToShow
+      {/* Main content area */}
+      <div style={{ position: 'relative' }}>
+        <div className={clsx('markdown', isTranslated && 'rtl-content')}>
+          {isLoading.raw || (isTranslated && isLoading.translation) ? (
+            <div>Loading content...</div>
+          ) : (
+            contentToDisplay
+          )}
+        </div>
+
+        {renderAccessDeniedOverlay && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)', // Semi-transparent white overlay
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10, // Ensure it's on top
+            textAlign: 'center',
+            flexDirection: 'column',
+            padding: '2rem',
+          }}>
+            <h1 className="hero__title">Access Denied</h1>
+            <p className="hero__subtitle">You must be logged in to view this content.</p>
+            <Link className="button button--secondary button--lg" to="/login">
+              Login to continue
+            </Link>
+          </div>
         )}
       </div>
     </>

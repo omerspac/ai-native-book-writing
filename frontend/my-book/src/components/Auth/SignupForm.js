@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '@site/src/auth/AuthContext';
 
-function SignupForm() {
+export default function SignupForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [softwareLevel, setSoftwareLevel] = useState('');
-  const [hardwareLevel, setHardwareLevel] = useState('');
+  const [softwareLevel, setSoftwareLevel] = useState('Beginner');
+  const [hardwareLevel, setHardwareLevel] = useState('Beginner');
   const [interestField, setInterestField] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -17,17 +17,16 @@ function SignupForm() {
     setError(null);
 
     const profile = {
-      software_level: softwareLevel || 'Beginner',
-      hardware_level: hardwareLevel || 'Beginner',
-      interest_field: interestField || 'AI',
+      software_level: softwareLevel,
+      hardware_level: hardwareLevel,
+      interest_field: interestField || 'AI', // Default interest
     };
 
     try {
       await signup(email, password, profile);
-      // Redirect is handled by AuthContext
+      // Redirect is now handled by AuthContext on successful signup/login
     } catch (err) {
       setError(err.message);
-      alert(`Signup Failed: ${err.message}`); // Show alert on error
     } finally {
       setLoading(false);
     }
@@ -35,8 +34,12 @@ function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit}>
-      {error && <div className="alert alert--danger">{error}</div>}
-      <div className="margin-bottom--md">
+      {error && (
+        <div className="alert alert--danger" role="alert">
+          {error}
+        </div>
+      )}
+      <div className="form-field">
         <label htmlFor="email">Email</label>
         <input
           type="email"
@@ -45,9 +48,10 @@ function SignupForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
         />
       </div>
-      <div className="margin-bottom--md">
+      <div className="form-field">
         <label htmlFor="password">Password</label>
         <input
           type="password"
@@ -56,38 +60,37 @@ function SignupForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="new-password"
         />
       </div>
 
-      <fieldset className="margin-bottom--md">
-        <legend>Background Survey (Optional)</legend>
-        <div className="margin-bottom--sm">
+      <fieldset>
+        <legend>Personalize Your Experience</legend>
+        <div className="form-field">
           <label htmlFor="softwareLevel">Software Background</label>
           <select
             id="softwareLevel"
             className="select"
             value={softwareLevel}
-            onChange={(e) => setSoftwareLevel(e.target.value)}
-          >
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
+            onChange={(e) => setSoftwareLevel(e.target.value)}>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
           </select>
         </div>
-        <div className="margin-bottom--sm">
+        <div className="form-field">
           <label htmlFor="hardwareLevel">Hardware Background</label>
           <select
             id="hardwareLevel"
             className="select"
             value={hardwareLevel}
-            onChange={(e) => setHardwareLevel(e.target.value)}
-          >
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
+            onChange={(e) => setHardwareLevel(e.target.value)}>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
           </select>
         </div>
-        <div>
+        <div className="form-field">
           <label htmlFor="interestField">Field of Interest</label>
           <input
             type="text"
@@ -95,16 +98,17 @@ function SignupForm() {
             className="input"
             value={interestField}
             onChange={(e) => setInterestField(e.target.value)}
-            placeholder="e.g., AI, Robotics, Web"
+            placeholder="e.g., Robotics, Web Dev, Data Science"
           />
         </div>
       </fieldset>
 
-      <button type="submit" className="button button--primary button--block" disabled={loading}>
-        {loading ? 'Signing up...' : 'Sign Up'}
+      <button
+        type="submit"
+        className="button button--primary button--block auth-submit-button"
+        disabled={loading}>
+        {loading ? 'Creating Account...' : 'Sign Up'}
       </button>
     </form>
   );
 }
-
-export default SignupForm;
