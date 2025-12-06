@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from backend.app.dependencies import get_current_user
 from backend.app.agents.translator_agent import TranslatorAgent
-from backend.app.models.user import User
 
 router = APIRouter()
 
@@ -14,12 +12,11 @@ class TranslateResponse(BaseModel):
 
 @router.post("/translate", response_model=TranslateResponse)
 async def translate_chapter(
-    request: TranslateRequest,
-    current_user: User = Depends(get_current_user) # Protect this endpoint
+    request: TranslateRequest
 ):
     """
     Translates English content to Urdu using the Translator Agent.
-    Requires authentication.
+    No authentication required.
     """
     try:
         translator = TranslatorAgent()

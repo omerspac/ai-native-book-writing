@@ -1,0 +1,38 @@
+{
+  "title": {
+    "message": "AI-Native Book",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "AI-Native Book Platform Logo",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Book": {
+    "message": "کتاب",
+    "description": "Navbar item with label Book"
+  },
+  "item.label.Blog": {
+    "message": "بلاگ",
+    "description": "Navbar item with label Blog"
+  },
+  "navbar.item.label.en": {
+    "message": "English",
+    "description": "Locale dropdown label for English"
+  },
+  "navbar.item.label.ur": {
+    "message": "اردو",
+    "description": "Locale dropdown label for Urdu"
+  },
+  "theme.CodeBlock.codeCopied": {
+    "message": "کاپی ہو گیا",
+    "description": "The text shown when code is copied"
+  },
+  "theme.CodeBlock.copyButtonAriaLabel": {
+    "message": "کوڈ کاپی کریں",
+    "description": "The ARIA label for the copy code button"
+  },
+  "theme.NotFound.title": {
+    "message": "صفحہ نہیں ملا",
+    "description": "The title of the 404 page"
+  }
+}
