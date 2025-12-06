@@ -92,22 +92,15 @@ const config: Config = {
           label: 'Book',
         },
         {to: '/blog', label: 'Blog', position: 'left'},
-        // AuthNavbarItem has been removed and replaced with explicit links
-        // You can add logic here to conditionally show these links based on auth state
         {
-          to: '/login',
-          label: 'Login',
+          type: 'custom',
           position: 'right',
+          component: '@site/src/components/Navbar/LanguageSwitcher.tsx',
         },
         {
-          to: '/signup',
-          label: 'Signup',
+          type: 'custom',
           position: 'right',
-        },
-        {
-          to: '/profile',
-          label: 'Profile',
-          position: 'right',
+          component: '@site/src/components/AuthNavbarItem/index.tsx',
         },
       ],
     },

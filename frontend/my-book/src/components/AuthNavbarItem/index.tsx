@@ -1,52 +1,43 @@
 import React from 'react';
 import { useAuth } from '../../auth/AuthContext';
-import NavbarItem from '@theme/NavbarItem';
-import { useLocation } from '@docusaurus/router';
+import Link from '@docusaurus/Link';
 
 export default function AuthNavbarItem() {
   const { user, logout } = useAuth();
-  const location = useLocation();
 
-  if (user) {
-    // User is logged in
-    return (
-      <>
-        <NavbarItem
-          type="dropdown"
-          position="right"
-          label={user.email} // Display user's email or a generic "Profile"
-        >
-          <NavbarItem
-            to="/profile"
-            label="Profile"
-            className={location.pathname === '/profile' ? 'dropdown__link--active' : ''}
-            isDropdownLink
-          />
-          <NavbarItem
-            label="Logout"
-            onClick={logout}
-            isDropdownLink
-          />
-        </NavbarItem>
-      </>
-    );
-  } else {
-    // User is not logged in
-    return (
-      <>
-        <NavbarItem
-          to="/login"
-          label="Login"
-          position="right"
-          className={location.pathname === '/login' ? 'navbar__link--active' : ''}
-        />
-        <NavbarItem
-          to="/signup"
-          label="Signup"
-          position="right"
-          className={location.pathname === '/signup' ? 'navbar__link--active' : ''}
-        />
-      </>
-    );
-  }
+  return (
+    <div className="navbar__item">
+      {user ? (
+        <div className="dropdown dropdown--hoverable">
+          <a href="#" className="navbar__link" onClick={(e) => e.preventDefault()}>
+            {user.email}
+          </a>
+          <ul className="dropdown__menu dropdown__menu--right">
+            <li>
+              <Link className="dropdown__link" to="/profile">
+                Profile
+              </Link>
+            </li>
+            <li>
+              <a href="#" className="dropdown__link" onClick={(e) => {
+                e.preventDefault();
+                logout();
+              }}>
+                Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+      ) : (
+        <>
+          <Link className="navbar__item navbar__link" to="/login">
+            Login
+          </Link>
+          <Link className="navbar__item navbar__link" to="/signup">
+            Signup
+          </Link>
+        </>
+      )}
+    </div>
+  );
 }

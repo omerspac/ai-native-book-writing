@@ -1,16 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api.v1.api import api_router # Import the new API router
+from app.api.v1.api import api_router
 
 app = FastAPI(title="AI-Native Book Platform API")
 
 # Configure CORS
-origins = [
-    "http://localhost:3000",  # Allow your Docusaurus development server
-    "http://localhost:8000",  # Allow your backend itself (if served from same origin in some cases)
-    "https://OmerGov.github.io", # Your GitHub Pages domain
-    # Add your deployed frontend URL here when available
-]
+# For development, we allow all origins. For production, you should restrict this.
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,0 +1,30 @@
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  padding: 1.5rem;
+  border-radius: var(--ifm-card-border-radius);
+  box-shadow: var(--ifm-global-shadow-lw);
+  background-color: var(--ifm-card-background-color);
+}
+
+@media (max-width: 600px) {
+  .auth-container {
+    padding: 1rem;
+    min-height: auto;
+  }
+  .auth-card {
+    padding: 1rem;
+  }
+}
+
+.auth-form-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}

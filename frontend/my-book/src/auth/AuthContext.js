@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { siteConfig } = useDocusaurusContext();
   const backendUrl = siteConfig.customFields.backendUrl;
+  const baseUrl = siteConfig.baseUrl;
 
   useEffect(() => {
     const loadUser = async () => {
@@ -38,10 +39,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const response = await fetch(`${backendUrl}/api/v1/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: email, password: password }),
     });
 
     if (!response.ok) {
@@ -51,15 +50,14 @@ export const AuthProvider = ({ children }) => {
 
     const data = await response.json();
     localStorage.setItem('access_token', data.access_token);
-    // Fetch user data after successful login
+
     const userResponse = await fetch(`${backendUrl}/api/v1/users/me`, {
-        headers: {
-            'Authorization': `Bearer ${data.access_token}`,
-        },
+        headers: { 'Authorization': `Bearer ${data.access_token}` },
     });
     if (userResponse.ok) {
         const userData = await userResponse.json();
         setUser(userData);
+        window.location.href = baseUrl; // Redirect on success
     } else {
         throw new Error('Failed to fetch user after login');
     }
@@ -68,9 +66,7 @@ export const AuthProvider = ({ children }) => {
   const signup = async (email, password, profile) => {
     const response = await fetch(`${backendUrl}/api/v1/auth/signup`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, profile }),
     });
 
@@ -79,31 +75,21 @@ export const AuthProvider = ({ children }) => {
       throw new Error(errorData.detail || 'Signup failed');
     }
 
-    const data = await response.json();
-    localStorage.setItem('access_token', data.access_token);
-    // Fetch user data after successful signup
-    const userResponse = await fetch(`${backendUrl}/api/v1/users/me`, {
-        headers: {
-            'Authorization': `Bearer ${data.access_token}`,
-        },
-    });
-    if (userResponse.ok) {
-        const userData = await userResponse.json();
-        setUser(userData);
-    } else {
-        throw new Error('Failed to fetch user after signup');
-    }
+    // After signup, log the user in to get a token
+    await login(email, password);
   };
 
   const logout = () => {
     localStorage.removeItem('access_token');
     setUser(null);
-    window.location.href = '/'; // Redirect to home page
+    window.location.href = baseUrl; // Redirect to home page
   };
 
+  const authValue = { user, loading, login, signup, logout };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
-      {!loading && children}
+    <AuthContext.Provider value={authValue}>
+      {children}
     </AuthContext.Provider>
   );
 };
