@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.dependencies import get_current_user
-from app.agents.personalization_agent import PersonalizationAgent
-from app.services.chapter_service import get_chapter_content
-from app.db.session import get_db
-from app.models.user import User
+from backend.app.dependencies import get_current_user
+from backend.app.agents.personalization_agent import PersonalizationAgent
+from backend.app.services.chapter_service import get_chapter_content
+from backend.app.db.session import get_db
+from backend.app.models.user import User
 
 router = APIRouter()
 

@@ -5,10 +5,10 @@ import os # Added for file reading
 from sqlalchemy.orm import Session # Added for database session
 
 # Assuming rag_pipeline is imported correctly from its path
-from app.rag.rag_pipeline import RAGPipeline
-from app.api.auth_api import get_current_active_user, User # Import for user authentication
-from app.core.database import get_db # Import for database session
-from app.models.user import UserProfile # Import UserProfile model
+from backend.app.rag.rag_pipeline import RAGPipeline
+from backend.app.api.auth_api import get_current_active_user, User # Import for user authentication
+from backend.app.core.database import get_db # Import for database session
+from backend.app.models.user import UserProfile # Import UserProfile model
 
 router = APIRouter()
 
