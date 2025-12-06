@@ -38,7 +38,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/omerspac/ai-native-book-writing/tree/main/',
+          editUrl: 'https://github.com/omerspac/ai-native-book-writing/tree/main/frontend/my-book',
         },
         blog: {
           showReadingTime: true,

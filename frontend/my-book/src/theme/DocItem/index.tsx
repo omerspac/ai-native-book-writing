@@ -49,9 +49,9 @@ export default function DocItemWrapper(props: Props): ReactNode {
         if (!response.ok) throw new Error(`Failed to fetch raw content: ${response.statusText}`);
         const markdownText = await response.text();
         setRawContent(markdownText);
-      } catch (err) {
-        setError(`Could not load chapter content: ${err.message}`);
-      } finally {
+      }
+      
+      finally {
         setIsLoading(prev => ({ ...prev, raw: false }));
       }
     };
@@ -127,19 +127,6 @@ export default function DocItemWrapper(props: Props): ReactNode {
 
   return (
     <>
-      {/* Buttons for personalization and translation (Only show translation-related buttons now) */}
-      <div className="margin-bottom--md button-group">
-          {isTranslated && (
-            <button className="button button--secondary button--sm" onClick={handleShowOriginal} disabled={isLoading.translation}>
-              Show Original
-            </button>
-          )}
-          {!isTranslated && language === 'en' && ( // Only show "Translate" if not already translated and language is English
-            <button className="button button--primary button--sm" onClick={() => setLanguage('ur')} disabled={isLoading.translation || isLoading.raw}>
-              {isLoading.translation ? 'Translating...' : 'Translate to Urdu'}
-            </button>
-          )}
-        </div>
 
       {error && <div className="alert alert--danger margin-top--sm">{error}</div>}
 
