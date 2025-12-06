@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models.user import User, UserProfile
+from backend.app.models.user import User, UserProfile
 from typing import Optional, Dict, Any
 import uuid
 

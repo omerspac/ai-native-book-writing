@@ -1,10 +1,19 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.core.config import settings
+from sqlalchemy.engine import URL # NEW IMPORT
+from backend.app.core.config import settings
 
 # Create the SQLAlchemy engine
 # The DATABASE_URL is loaded from environment variables via Pydantic settings
-engine = create_engine(settings.DATABASE_URL)
+database_url = settings.DATABASE_URL
+
+# Explicitly ensure the URL uses psycopg2 dialect
+if database_url.startswith("postgresql+asyncpg"):
+    database_url = database_url.replace("postgresql+asyncpg", "postgresql+psycopg2")
+elif database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg2://")
+
+engine = create_engine(database_url)
 
 # Create a SessionLocal class
 # Each instance of SessionLocal will be a database session

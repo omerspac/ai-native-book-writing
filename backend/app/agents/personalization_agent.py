@@ -2,8 +2,8 @@ import os
 import re
 from typing import Dict, Any
 import google.generativeai as genai
-from app.core.config import settings
-from app.models.user import UserProfile # To get the UserProfile model for type hinting
+from backend.app.core.config import settings
+from backend.app.models.user import UserProfile # To get the UserProfile model for type hinting
 
 # Configure the Gemini API
 genai.configure(api_key=settings.GEMINI_API_KEY)

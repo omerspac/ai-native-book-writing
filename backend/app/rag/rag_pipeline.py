@@ -7,8 +7,8 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from qdrant_client import models
 
 # Assuming qdrant_client and postgres_client are in sibling directories or properly imported
-from app.db.qdrant_client import QdrantVectorClient
-from app.db.postgres_client import PostgresClient
+from backend.app.db.qdrant_client import QdrantVectorClient
+from backend.app.db.postgres_client import PostgresClient
 
 load_dotenv()
 

@@ -13,3 +13,7 @@ sentence-transformers
 langchain
 langchain-community
 tiktoken
+asyncpg
+google-generativeai
+python-multipart
+

@@ -4,9 +4,9 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 
-from app.api.auth_api import get_current_active_user, User
-from app.core.database import get_db, create_db_and_tables
-from app.models.user import UserProfile # Import UserProfile from user.py
+from backend.app.api.auth_api import get_current_active_user, User
+from backend.app.core.database import get_db, create_db_and_tables
+from backend.app.models.user import UserProfile # Import UserProfile from user.py
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 

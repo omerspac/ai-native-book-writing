@@ -1,5 +1,5 @@
-from app.db.session import engine
-from app.models.user import Base # Import Base from your models
+from backend.app.db.session import engine
+from backend.app.models.user import Base # Import Base from your models
 
 def create_db_and_tables():
     print("Creating database tables...")

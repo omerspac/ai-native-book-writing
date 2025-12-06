@@ -1,4 +1,4 @@
-from app.core.config import settings
+from backend.app.core.config import settings
 # In a real scenario, you would use the Gemini client library
 # import google.generativeai as genai
 

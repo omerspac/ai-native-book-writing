@@ -39,9 +39,9 @@ export const AuthProvider = ({ children }) => {
 
   // Login function
   const login = async (email, password) => {
-    // FastAPI's OAuth2PasswordRequestForm expects 'username' and 'password'
+    // Our custom login endpoint expects 'email' and 'password' as form data
     const formData = new URLSearchParams();
-    formData.append('username', email);
+    formData.append('email', email);
     formData.append('password', password);
 
     const response = await fetch(`${backendUrl}/api/v1/auth/login`, {

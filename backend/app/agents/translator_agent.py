@@ -2,7 +2,7 @@ import os
 import re
 from typing import List, Dict
 import google.generativeai as genai
-from app.core.config import settings
+from backend.app.core.config import settings
 
 # Configure the Gemini API
 genai.configure(api_key=settings.GEMINI_API_KEY)

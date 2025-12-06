@@ -25,7 +25,7 @@ def get_db():
         db.close()
 
 # Import models to ensure they are registered with SQLAlchemy Base
-from app.models import user
+from backend.app.models import user
 
 def create_db_and_tables():
     Base.metadata.create_all(bind=engine)
