@@ -92,9 +92,21 @@ const config: Config = {
           label: 'Book',
         },
         {to: '/blog', label: 'Blog', position: 'left'},
+        // AuthNavbarItem has been removed and replaced with explicit links
+        // You can add logic here to conditionally show these links based on auth state
         {
-          href: 'https://github.com/omerspac/ai-native-book-writing',
-          label: 'GitHub',
+          to: '/login',
+          label: 'Login',
+          position: 'right',
+        },
+        {
+          to: '/signup',
+          label: 'Signup',
+          position: 'right',
+        },
+        {
+          to: '/profile',
+          label: 'Profile',
           position: 'right',
         },
       ],

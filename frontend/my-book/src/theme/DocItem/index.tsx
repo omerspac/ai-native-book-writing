@@ -1,241 +1,192 @@
-import React, {type ReactNode, useState, useEffect} from 'react';
+import React, { type ReactNode, useState, useEffect } from 'react';
 import DocItem from '@theme-original/DocItem';
 import type DocItemType from '@theme/DocItem';
-import type {WrapperProps} from '@docusaurus/types';
-import { useAuth } from '../../auth/AuthContext'; // Adjust path as necessary
+import type { WrapperProps } from '@docusaurus/types';
+import { useAuth } from '../../auth/AuthContext';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import clsx from 'clsx'; // For conditional class names
+import clsx from 'clsx';
+import Link from '@docusaurus/Link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type Props = WrapperProps<typeof DocItemType>;
 
+// Define the type for the active view
+type ActiveView = 'original' | 'personalized' | 'translated';
+
 export default function DocItemWrapper(props: Props): ReactNode {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { siteConfig } = useDocusaurusContext();
-  const backendUrl = siteConfig.customFields.backendUrl;
+  const backendUrl = siteConfig.customFields.backendUrl as string;
 
   const [rawContent, setRawContent] = useState('');
-  const [translatedContent, setTranslatedContent] = useState('');
-  const [isTranslated, setIsTranslated] = useState(false);
-  const [translationLoading, setTranslationLoading] = useState(false);
-  const [translationError, setTranslationError] = useState(null);
-
   const [personalizedContent, setPersonalizedContent] = useState('');
-  const [isPersonalized, setIsPersonalized] = useState(false);
-  const [personalizationLoading, setPersonalizationLoading] = useState(false);
-  const [personalizationError, setPersonalizationError] = useState(null);
+  const [translatedContent, setTranslatedContent] = useState('');
+  
+  const [isLoading, setIsLoading] = useState({
+    personalization: false,
+    translation: false,
+  });
+  const [error, setError] = useState({
+    personalization: null,
+    translation: null,
+  });
+
+  const [activeView, setActiveView] = useState<ActiveView>('original');
 
   const { content } = props;
-  const docFilePath = content.metadata.source; // e.g., @site/docs/chapter01.md
+  const docFilePath = content.metadata.source;
 
   useEffect(() => {
-    // Fetch the raw Markdown content of the current document
     const fetchRawContent = async () => {
       try {
-        // Docusaurus serves static files from the 'static' directory,
-        // or directly from the 'docs' folder for markdown files.
-        // We need to construct the correct path to fetch the raw .md file.
-        // docFilePath looks like @site/docs/chapter01.md
-        // We need to get `/docs/chapter01.md` or similar to fetch.
         const contentPath = docFilePath.replace(/^@site/, ''); // Removes @site prefix
-        const response = await fetch(`${siteConfig.baseUrl}${contentPath}`);
+        // Construct a clean path, removing potential double slashes
+        const fetchUrl = `${siteConfig.baseUrl.replace(/\/$/, '')}${contentPath}`;
+        const response = await fetch(fetchUrl);
         if (!response.ok) {
-          throw new Error(`Failed to fetch raw content: ${response.statusText}`);
+          throw new Error(`Failed to fetch raw content from ${fetchUrl}: ${response.statusText}`);
         }
         const markdownText = await response.text();
         setRawContent(markdownText);
       } catch (err) {
         console.error("Error fetching raw content:", err);
-        setPersonalizationError("Could not load original content for personalization."); // Also set for personalization
-        setTranslationError("Could not load original content for translation.");
+        setError(prev => ({
+          ...prev,
+          personalization: "Could not load original content for personalization.",
+          translation: "Could not load original content for translation."
+        }));
       }
     };
-    
-    // Only fetch raw content once per doc item load
-    if (!rawContent && !personalizationError && !translationError) {
+
+    if (user && !rawContent && !error.personalization && !error.translation) {
       fetchRawContent();
     }
+  }, [docFilePath, user, siteConfig.baseUrl, rawContent, error.personalization, error.translation]);
 
-  }, [docFilePath, rawContent, personalizationError, translationError, siteConfig.baseUrl]);
-
-  const handleTranslate = async () => {
-    setTranslationLoading(true);
-    setTranslationError(null);
-    setPersonalizedContent(''); // Clear personalized content if translating
-    setIsPersonalized(false); // Reset personalization state
+  const handleAction = async (type: 'personalize' | 'translate') => {
+    const isPersonalize = type === 'personalize';
+    const endpoint = isPersonalize 
+      ? `/api/v1/chapters/${getChapterId()}/personalized` 
+      : '/api/v1/translate';
+    
+    setIsLoading(prev => ({ ...prev, [isPersonalize ? 'personalization' : 'translation']: true }));
+    setError(prev => ({ ...prev, [isPersonalize ? 'personalization' : 'translation']: null }));
 
     try {
-      if (!rawContent) {
-        throw new Error("Original content not loaded yet.");
-      }
-
+      if (!rawContent) throw new Error("Original content not loaded yet.");
+      
       const token = localStorage.getItem('access_token');
       if (!token) {
-        window.location.href = '/login'; // Or show a popup
-        throw new Error("You must be logged in to translate content.");
+        window.location.href = '/login';
+        return;
       }
-
-      const response = await fetch(`${backendUrl}/api/v1/translate`, {
-        method: 'POST',
+      
+      const response = await fetch(`${backendUrl}${endpoint}`, {
+        method: isPersonalize ? 'GET' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: rawContent }),
+        body: isPersonalize ? undefined : JSON.stringify({ content: rawContent }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Translation failed');
+        throw new Error(errorData.detail || `${type} failed`);
       }
 
       const data = await response.json();
-      setTranslatedContent(data.translated_content);
-      setIsTranslated(true);
-    } catch (err) {
-      setTranslationError(err.message);
-      console.error("Translation error:", err);
-    } finally {
-      setTranslationLoading(false);
-    }
-  };
-
-  const handleShowOriginal = () => {
-    setIsTranslated(false);
-    setTranslatedContent('');
-    setIsPersonalized(false); // Clear personalized content as well
-    setPersonalizedContent(''); // Clear personalized content as well
-  };
-
-  const handlePersonalize = async () => {
-    setPersonalizationLoading(true);
-    setPersonalizationError(null);
-    setTranslatedContent(''); // Clear translated content if personalizing
-    setIsTranslated(false); // Reset translation state
-
-    try {
-      if (!rawContent) {
-        throw new Error("Original content not loaded yet.");
-      }
-
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        window.location.href = '/login'; // Or show a popup
-        throw new Error("You must be logged in to personalize content.");
-      }
-
-      // Extract chapter_id from docFilePath (e.g., from "@site/docs/chapter01.md" -> "chapter01")
-      // This assumes a simple structure like /docs/chapter-name.md
-      const chapterIdMatch = docFilePath.match(/\/docs\/(.+?)\.md/);
-      let chapterId = null;
-      if (chapterIdMatch && chapterIdMatch[1]) {
-          chapterId = chapterIdMatch[1];
+      if (isPersonalize) {
+        setPersonalizedContent(data.personalized_content);
+        setActiveView('personalized');
       } else {
-        // Handle nested docs like /docs/tutorial-basics/create-a-document.md
-        // We need to extract the full relative path from docs/
-        const fullChapterPathMatch = docFilePath.match(/\/docs\/(.+)$/);
-        if (fullChapterPathMatch && fullChapterPathMatch[1]) {
-          chapterId = fullChapterPathMatch[1].replace(/\.mdx?$/, ''); // Remove .md or .mdx
-        }
+        setTranslatedContent(data.translated_content);
+        setActiveView('translated');
       }
-      
-
-      if (!chapterId) {
-          throw new Error("Could not extract chapter ID from document path.");
-      }
-
-      const response = await fetch(`${backendUrl}/api/v1/chapters/${chapterId}/personalized`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Personalization failed');
-      }
-
-      const data = await response.text(); // Assuming backend returns plain text markdown
-      setPersonalizedContent(data);
-      setIsPersonalized(true);
     } catch (err) {
-      setPersonalizationError(err.message);
-      console.error("Personalization error:", err);
+      console.error(`${type} error:`, err);
+      setError(prev => ({ ...prev, [isPersonalize ? 'personalization' : 'translation']: err.message }));
     } finally {
-      setPersonalizationLoading(false);
+      setIsLoading(prev => ({ ...prev, [isPersonalize ? 'personalization' : 'translation']: false }));
     }
   };
+  
+  const getChapterId = () => {
+    const match = docFilePath.match(/\/docs\/(.+?)\.(md|mdx)$/);
+    if (!match) throw new Error("Could not extract chapter ID from document path.");
+    return match[1];
+  }
 
-  const handleShowOriginalPersonalized = () => {
-    setIsPersonalized(false);
-    setPersonalizedContent('');
-    setIsTranslated(false); // Clear translated content as well
-    setTranslatedContent(''); // Clear translated content as well
-  };
+  const handleShowOriginal = () => setActiveView('original');
 
-
+  // Protection guard
+  if (!loading && !user) {
+    return (
+      <div className="hero hero--primary" style={{ backgroundColor: 'var(--ifm-color-primary-darkest)', minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="container text--center">
+          <h1 className="hero__title">Access Denied</h1>
+          <p className="hero__subtitle">You must be logged in to view this content.</p>
+          <div className="margin-top--md">
+            <Link className="button button--secondary button--lg" to="/login">
+              Login to continue
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <>
-      {user && ( // Show buttons only if user is logged in
-        <div className="margin-bottom--md button-group"> {/* Added button-group for styling */}
-          {/* Personalization Button */}
-          {isPersonalized ? (
+      {user && (
+        <div className="margin-bottom--md button-group">
+          {activeView !== 'original' && (
             <button
               className="button button--secondary button--sm margin-right--sm"
-              onClick={handleShowOriginalPersonalized}
-              disabled={personalizationLoading}
+              onClick={handleShowOriginal}
             >
-              Show Original Content
-            </button>
-          ) : (
-            <button
-              className="button button--primary button--sm margin-right--sm"
-              onClick={handlePersonalize}
-              disabled={personalizationLoading || !rawContent}
-            >
-              {personalizationLoading ? 'Personalizing...' : 'Personalize Chapter'}
+              Show Original
             </button>
           )}
 
-          {/* Translation Button */}
-          {isTranslated ? (
+          {activeView !== 'personalized' && (
             <button
-              className="button button--secondary button--sm"
-              onClick={handleShowOriginal}
-              disabled={translationLoading}
+              className="button button--primary button--sm margin-right--sm"
+              onClick={() => handleAction('personalize')}
+              disabled={isLoading.personalization || !rawContent}
             >
-              Show Original English
+              {isLoading.personalization ? 'Personalizing...' : 'Personalize Chapter'}
             </button>
-          ) : (
-            <button
+          )}
+
+          {activeView !== 'translated' && (
+             <button
               className="button button--primary button--sm"
-              onClick={handleTranslate}
-              disabled={translationLoading || !rawContent}
+              onClick={() => handleAction('translate')}
+              disabled={isLoading.translation || !rawContent}
             >
-              {translationLoading ? 'Translating...' : 'Translate to Urdu'}
+              {isLoading.translation ? 'Translating...' : 'Translate to Urdu'}
             </button>
           )}
-          {personalizationError && (
-            <div className="alert alert--danger margin-top--sm">
-              Personalization Error: {personalizationError}
-            </div>
-          )}
-          {translationError && (
-            <div className="alert alert--danger margin-top--sm">
-              Translation Error: {translationError}
-            </div>
-          )}
+
+          {error.personalization && <div className="alert alert--danger margin-top--sm">Personalization Error: {error.personalization}</div>}
+          {error.translation && <div className="alert alert--danger margin-top--sm">Translation Error: {error.translation}</div>}
         </div>
       )}
-      {isPersonalized && personalizedContent ? (
-        <div className="markdown"> {/* Apply markdown class */}
-          <div dangerouslySetInnerHTML={{ __html: personalizedContent }} />
+
+      {activeView === 'original' && <DocItem {...props} />}
+      
+      {activeView === 'personalized' && personalizedContent && (
+        <div className="markdown">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{personalizedContent}</ReactMarkdown>
         </div>
-      ) : isTranslated && translatedContent ? (
-        <div className={clsx('markdown', 'rtl-content')}> {/* Apply markdown and RTL classes */}
-          <div dangerouslySetInnerHTML={{ __html: translatedContent }} />
+      )}
+
+      {activeView === 'translated' && translatedContent && (
+        <div className={clsx('markdown', 'rtl-content')}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{translatedContent}</ReactMarkdown>
         </div>
-      ) : (
-        <DocItem {...props} />
       )}
     </>
   );

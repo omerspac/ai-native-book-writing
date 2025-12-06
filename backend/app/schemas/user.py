@@ -31,10 +31,20 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
-class UserResponse(BaseModel):
-    id: uuid.UUID # Assuming UUID for user ID
-    email: EmailStr
-    # You might add more fields here if needed for response
+class UserProfileResponse(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    software_level: Optional[SoftwareLevel] = None
+    hardware_level: Optional[HardwareLevel] = None
+    interest_field: Optional[str] = None
 
     class Config:
-        from_attributes = True # for SQLAlchemy integration
+        from_attributes = True
+
+class UserResponse(BaseModel):
+    id: uuid.UUID
+    email: EmailStr
+    profile: Optional[UserProfileResponse] = None # Add profile here
+
+    class Config:
+        from_attributes = True
