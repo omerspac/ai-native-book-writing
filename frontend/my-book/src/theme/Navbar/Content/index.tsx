@@ -12,9 +12,6 @@ import NavbarLogo from '@theme/Navbar/Logo';
 import NavbarSearch from '@theme/Navbar/Search';
 import styles from './styles.module.css';
 
-// --- CUSTOM IMPORT ---
-import AuthNavbarItem from '@site/src/components/AuthNavbarItem';
-
 function useNavbarItems() {
   // TODO temporary casting until ThemeConfig type is improved
   return useThemeConfig().navbar.items;
@@ -60,8 +57,6 @@ export default function NavbarContent() {
         <>
           <NavbarItems items={rightItems} />
           <NavbarColorModeToggle className={styles.colorModeToggle} />
-          {/* --- CUSTOM COMPONENT INJECTION --- */}
-          <AuthNavbarItem />
           {!searchBarItem && (
             <NavbarSearch>
               <SearchBar />
