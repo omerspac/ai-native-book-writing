@@ -239,3 +239,4 @@ export default function DocItemWrapper(props: Props): ReactNode {
       )}
     </>
   );
+}
