@@ -1,0 +1,10 @@
+.authNavItem {
+  display: flex;
+  align-items: center;
+  margin-left: 0.5rem;
+}
+
+.authButtons {
+  display: flex;
+  align-items: center;
+}

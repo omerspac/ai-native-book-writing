@@ -1,16 +1,28 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api.v1.api import api_router # Import the new API router
+from backend.app.api.v1.api import api_router
 
-app = FastAPI(title="AI-Native Book Platform API")
+app = FastAPI(
+    title="AI-Native Book Platform API",
+    description="API for the AI-Native Book Platform.",
+    version="1.0.0",
+)
 
-# Configure CORS
+# --- Production-Ready CORS Configuration ---
+# In production, set the FRONTEND_URL environment variable 
+# (e.g., your GitHub Pages URL like https://<user>.github.io).
 origins = [
-    "http://localhost:3000",  # Allow your Docusaurus development server
-    "http://localhost:8000",  # Allow your backend itself (if served from same origin in some cases)
-    "https://OmerGov.github.io", # Your GitHub Pages domain
-    # Add your deployed frontend URL here when available
+    "http://localhost:3000", # Default for local Docusaurus dev
 ]
+prod_origin = os.environ.get("FRONTEND_URL")
+if prod_origin:
+    origins.append(prod_origin)
+
+# For development flexibility, you might add a wildcard,
+# but it's more secure to be specific.
+if os.environ.get("ENV") == "development":
+    origins.append("*") # Or specific dev URLs
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,8 +32,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix="/api/v1") # Include the new API router
+app.include_router(api_router, prefix="/api/v1")
 
-@app.get("/")
+@app.get("/", tags=["Root"])
 def read_root():
     return {"message": "Welcome to the AI-Native Book Platform API"}

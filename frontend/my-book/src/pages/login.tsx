@@ -1,41 +1,26 @@
 import React from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import LoginForm from '../components/Auth/LoginForm'; // Import the LoginForm component
+import LoginForm from '../components/Auth/LoginForm';
+import '../css/auth.css';
 
-function Login() {
-  const {siteConfig} = useDocusaurusContext();
-
+export default function Login() {
   return (
     <Layout title="Login" description="Log in to the AI-Native Book Platform">
-      <header className="hero hero--primary" style={{backgroundColor: 'var(--ifm-color-primary-darkest)'}}>
-        <div className="container">
-          <h1 className="hero__title">Log In</h1>
-          <p className="hero__subtitle">Access your personalized AI-Native Book experience.</p>
-        </div>
-      </header>
-      <main>
-        <section className="container margin-vert--xl">
-          <div className="row">
-            <div className="col col--6 col--offset-3">
-              <div className="card">
-                <div className="card__header">
-                  <h3>Access Your Account</h3>
-                </div>
-                <div className="card__body">
-                  <LoginForm /> {/* Use the LoginForm component */}
-                </div>
-                <div className="card__footer text--center">
-                  <p>Don't have an account? <Link to={`${siteConfig.baseUrl}signup`}>Sign Up</Link></p>
-                </div>
-              </div>
-            </div>
+      <main className="auth-container">
+        <div className="auth-card">
+          <div className="auth-form-header">
+            <h1>Welcome Back</h1>
+            <p>Access your personalized AI-Native Book experience.</p>
           </div>
-        </section>
+          <LoginForm />
+          <div className="auth-footer">
+            <p>
+              Don't have an account? <Link to="/signup">Sign Up</Link>
+            </p>
+          </div>
+        </div>
       </main>
     </Layout>
   );
 }
-
-export default Login;

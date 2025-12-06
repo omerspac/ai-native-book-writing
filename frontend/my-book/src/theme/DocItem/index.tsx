@@ -1,78 +1,127 @@
-import React, {type ReactNode, useState, useEffect} from 'react';
+import React, { type ReactNode, useState, useEffect } from 'react';
 import DocItem from '@theme-original/DocItem';
 import type DocItemType from '@theme/DocItem';
-import type {WrapperProps} from '@docusaurus/types';
-import { useAuth } from '../../auth/AuthContext'; // Adjust path as necessary
+import type { WrapperProps } from '@docusaurus/types';
+import { useAuth } from '@site/src/auth/AuthContext';
+import { useLanguage } from '@site/src/context/LanguageContext';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import clsx from 'clsx'; // For conditional class names
+import clsx from 'clsx';
+import Link from '@docusaurus/Link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type Props = WrapperProps<typeof DocItemType>;
 
 export default function DocItemWrapper(props: Props): ReactNode {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { language, setLanguage } = useLanguage();
   const { siteConfig } = useDocusaurusContext();
-  const backendUrl = siteConfig.customFields.backendUrl;
+  const backendUrl = siteConfig.customFields.backendUrl as string;
 
+  // Content states
   const [rawContent, setRawContent] = useState('');
-  const [translatedContent, setTranslatedContent] = useState('');
-  const [isTranslated, setIsTranslated] = useState(false);
-  const [translationLoading, setTranslationLoading] = useState(false);
-  const [translationError, setTranslationError] = useState(null);
-
   const [personalizedContent, setPersonalizedContent] = useState('');
-  const [isPersonalized, setIsPersonalized] = useState(false);
-  const [personalizationLoading, setPersonalizationLoading] = useState(false);
-  const [personalizationError, setPersonalizationError] = useState(null);
+  const [translatedContent, setTranslatedContent] = useState('');
+  
+  // View states
+  const [activeView, setActiveView] = useState<'original' | 'personalized'>('original');
+  const [isTranslated, setIsTranslated] = useState(false);
+
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState({
+    raw: true,
+    personalization: false,
+    translation: false,
+  });
+  const [error, setError] = useState<string | null>(null);
 
   const { content } = props;
-  const docFilePath = content.metadata.source; // e.g., @site/docs/chapter01.md
+  const docFilePath = content.metadata.source;
 
+  // 1. Fetch raw content on mount
   useEffect(() => {
-    // Fetch the raw Markdown content of the current document
     const fetchRawContent = async () => {
+      setIsLoading(prev => ({ ...prev, raw: true }));
       try {
-        // Docusaurus serves static files from the 'static' directory,
-        // or directly from the 'docs' folder for markdown files.
-        // We need to construct the correct path to fetch the raw .md file.
-        // docFilePath looks like @site/docs/chapter01.md
-        // We need to get `/docs/chapter01.md` or similar to fetch.
-        const contentPath = docFilePath.replace(/^@site/, ''); // Removes @site prefix
-        const response = await fetch(`${siteConfig.baseUrl}${contentPath}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch raw content: ${response.statusText}`);
-        }
+        // Docusaurus serves static files from the 'static' directory.
+        // We construct the path to fetch the raw .md file.
+        // docFilePath looks like @site/docs/chapter01.md, we need /docs/chapter01.md relative to base URL
+        const contentPath = docFilePath.replace(/^@site/, ''); 
+        // Ensure no double slashes if baseUrl ends with a slash
+        const fetchUrl = `${siteConfig.baseUrl.replace(/\/$/, '')}${contentPath}`;
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error(`Failed to fetch raw content: ${response.statusText}`);
         const markdownText = await response.text();
         setRawContent(markdownText);
       } catch (err) {
-        console.error("Error fetching raw content:", err);
-        setPersonalizationError("Could not load original content for personalization."); // Also set for personalization
-        setTranslationError("Could not load original content for translation.");
+        setError(`Could not load chapter content: ${err.message}`);
+      } finally {
+        setIsLoading(prev => ({ ...prev, raw: false }));
       }
     };
-    
-    // Only fetch raw content once per doc item load
-    if (!rawContent && !personalizationError && !translationError) {
+
+    if (user) { // Only fetch raw content if user is logged in
       fetchRawContent();
     }
+  }, [docFilePath, user, siteConfig.baseUrl]);
 
-  }, [docFilePath, rawContent, personalizationError, translationError, siteConfig.baseUrl]);
+  // 2. Handle translation when language context changes
+  useEffect(() => {
+    if (language === 'ur') {
+      handleTranslate();
+      setIsTranslated(true);
+    } else {
+      setIsTranslated(false);
+    }
+  }, [language, activeView, personalizedContent, rawContent]);
 
-  const handleTranslate = async () => {
-    setTranslationLoading(true);
-    setTranslationError(null);
-    setPersonalizedContent(''); // Clear personalized content if translating
-    setIsPersonalized(false); // Reset personalization state
+  const getChapterId = () => {
+    const match = docFilePath.match(/\/docs\/(.+?)\.(md|mdx)$/);
+    if (!match) throw new Error("Could not extract chapter ID.");
+    return match[1];
+  }
 
+  // 3. Personalization handler
+  const handlePersonalize = async () => {
+    if (personalizedContent) {
+      setActiveView('personalized');
+      return;
+    }
+
+    setIsLoading(prev => ({ ...prev, personalization: true }));
+    setError(null);
     try {
-      if (!rawContent) {
-        throw new Error("Original content not loaded yet.");
-      }
-
       const token = localStorage.getItem('access_token');
-      if (!token) {
-        window.location.href = '/login'; // Or show a popup
-        throw new Error("You must be logged in to translate content.");
-      }
+      if (!token) throw new Error("You must be logged in.");
+
+      const chapterId = getChapterId();
+      const response = await fetch(`${backendUrl}/api/v1/chapters/${chapterId}/personalized`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error((await response.json()).detail || 'Personalization failed');
+      
+      const data = await response.json();
+      setPersonalizedContent(data.personalized_content);
+      setActiveView('personalized');
+    } catch (err) {
+      setError(`Personalization failed: ${err.message}`);
+      alert(`Personalization failed: ${err.message}`);
+    } finally {
+      setIsLoading(prev => ({ ...prev, personalization: false }));
+    }
+  };
+
+  // 4. Translation handler
+  const handleTranslate = async () => {
+    const contentToTranslate = activeView === 'personalized' ? personalizedContent : rawContent;
+    if (!contentToTranslate) return;
+
+    setIsLoading(prev => ({ ...prev, translation: true }));
+    setError(null);
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error("You must be logged in.");
 
       const response = await fetch(`${backendUrl}/api/v1/translate`, {
         method: 'POST',
@@ -80,163 +129,94 @@ export default function DocItemWrapper(props: Props): ReactNode {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: rawContent }),
+        body: JSON.stringify({ content: contentToTranslate }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Translation failed');
-      }
+      if (!response.ok) throw new Error((await response.json()).detail || 'Translation failed');
 
       const data = await response.json();
       setTranslatedContent(data.translated_content);
-      setIsTranslated(true);
     } catch (err) {
-      setTranslationError(err.message);
-      console.error("Translation error:", err);
+      setError(`Translation failed: ${err.message}`);
+      alert(`Translation failed: ${err.message}`);
     } finally {
-      setTranslationLoading(false);
+      setIsLoading(prev => ({ ...prev, translation: false }));
     }
   };
 
   const handleShowOriginal = () => {
-    setIsTranslated(false);
-    setTranslatedContent('');
-    setIsPersonalized(false); // Clear personalized content as well
-    setPersonalizedContent(''); // Clear personalized content as well
+    setActiveView('original');
+    setLanguage('en'); // Also switch language back to English
   };
 
-  const handlePersonalize = async () => {
-    setPersonalizationLoading(true);
-    setPersonalizationError(null);
-    setTranslatedContent(''); // Clear translated content if personalizing
-    setIsTranslated(false); // Reset translation state
+  // --- Render Logic ---
+  // If not authenticated, always render DocItem, but cover it with an access denied message.
+  // This allows Docusaurus to build the site without broken link errors.
+  const renderAccessDeniedOverlay = !user && !authLoading;
 
-    try {
-      if (!rawContent) {
-        throw new Error("Original content not loaded yet.");
-      }
-
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        window.location.href = '/login'; // Or show a popup
-        throw new Error("You must be logged in to personalize content.");
-      }
-
-      // Extract chapter_id from docFilePath (e.g., from "@site/docs/chapter01.md" -> "chapter01")
-      // This assumes a simple structure like /docs/chapter-name.md
-      const chapterIdMatch = docFilePath.match(/\/docs\/(.+?)\.md/);
-      let chapterId = null;
-      if (chapterIdMatch && chapterIdMatch[1]) {
-          chapterId = chapterIdMatch[1];
-      } else {
-        // Handle nested docs like /docs/tutorial-basics/create-a-document.md
-        // We need to extract the full relative path from docs/
-        const fullChapterPathMatch = docFilePath.match(/\/docs\/(.+)$/);
-        if (fullChapterPathMatch && fullChapterPathMatch[1]) {
-          chapterId = fullChapterPathMatch[1].replace(/\.mdx?$/, ''); // Remove .md or .mdx
-        }
-      }
-      
-
-      if (!chapterId) {
-          throw new Error("Could not extract chapter ID from document path.");
-      }
-
-      const response = await fetch(`${backendUrl}/api/v1/chapters/${chapterId}/personalized`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Personalization failed');
-      }
-
-      const data = await response.text(); // Assuming backend returns plain text markdown
-      setPersonalizedContent(data);
-      setIsPersonalized(true);
-    } catch (err) {
-      setPersonalizationError(err.message);
-      console.error("Personalization error:", err);
-    } finally {
-      setPersonalizationLoading(false);
-    }
-  };
-
-  const handleShowOriginalPersonalized = () => {
-    setIsPersonalized(false);
-    setPersonalizedContent('');
-    setIsTranslated(false); // Clear translated content as well
-    setTranslatedContent(''); // Clear translated content as well
-  };
-
+  let contentToDisplay = null;
+  if (isTranslated) {
+    contentToDisplay = <ReactMarkdown remarkPlugins={[remarkGfm]}>{translatedContent}</ReactMarkdown>;
+  } else if (activeView === 'personalized') {
+    contentToDisplay = <ReactMarkdown remarkPlugins={[remarkGfm]}>{personalizedContent}</ReactMarkdown>;
+  } else {
+    contentToDisplay = <DocItem {...props} />;
+  }
 
   return (
     <>
-      {user && ( // Show buttons only if user is logged in
-        <div className="margin-bottom--md button-group"> {/* Added button-group for styling */}
-          {/* Personalization Button */}
-          {isPersonalized ? (
-            <button
-              className="button button--secondary button--sm margin-right--sm"
-              onClick={handleShowOriginalPersonalized}
-              disabled={personalizationLoading}
-            >
-              Show Original Content
-            </button>
-          ) : (
-            <button
-              className="button button--primary button--sm margin-right--sm"
-              onClick={handlePersonalize}
-              disabled={personalizationLoading || !rawContent}
-            >
-              {personalizationLoading ? 'Personalizing...' : 'Personalize Chapter'}
+      {/* Buttons for personalization and translation */}
+      {user && ( // Only show buttons if user is logged in
+        <div className="margin-bottom--md button-group">
+          {activeView !== 'original' && (
+            <button className="button button--secondary button--sm" onClick={handleShowOriginal} disabled={isLoading.personalization || isLoading.translation}>
+              Show Original
             </button>
           )}
+          {activeView === 'original' && (
+            <button className="button button--primary button--sm" onClick={handlePersonalize} disabled={isLoading.personalization || isLoading.raw}>
+              {isLoading.personalization ? 'Personalizing...' : 'Personalize Chapter'}
+            </button>
+          )}
+        </div>
+      )}
 
-          {/* Translation Button */}
-          {isTranslated ? (
-            <button
-              className="button button--secondary button--sm"
-              onClick={handleShowOriginal}
-              disabled={translationLoading}
-            >
-              Show Original English
-            </button>
+      {error && <div className="alert alert--danger margin-top--sm">{error}</div>}
+
+      {/* Main content area */}
+      <div style={{ position: 'relative' }}>
+        <div className={clsx('markdown', isTranslated && 'rtl-content')}>
+          {isLoading.raw || (isTranslated && isLoading.translation) ? (
+            <div>Loading content...</div>
           ) : (
-            <button
-              className="button button--primary button--sm"
-              onClick={handleTranslate}
-              disabled={translationLoading || !rawContent}
-            >
-              {translationLoading ? 'Translating...' : 'Translate to Urdu'}
-            </button>
-          )}
-          {personalizationError && (
-            <div className="alert alert--danger margin-top--sm">
-              Personalization Error: {personalizationError}
-            </div>
-          )}
-          {translationError && (
-            <div className="alert alert--danger margin-top--sm">
-              Translation Error: {translationError}
-            </div>
+            contentToDisplay
           )}
         </div>
-      )}
-      {isPersonalized && personalizedContent ? (
-        <div className="markdown"> {/* Apply markdown class */}
-          <div dangerouslySetInnerHTML={{ __html: personalizedContent }} />
-        </div>
-      ) : isTranslated && translatedContent ? (
-        <div className={clsx('markdown', 'rtl-content')}> {/* Apply markdown and RTL classes */}
-          <div dangerouslySetInnerHTML={{ __html: translatedContent }} />
-        </div>
-      ) : (
-        <DocItem {...props} />
-      )}
+
+        {renderAccessDeniedOverlay && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)', // Semi-transparent white overlay
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10, // Ensure it's on top
+            textAlign: 'center',
+            flexDirection: 'column',
+            padding: '2rem',
+          }}>
+            <h1 className="hero__title">Access Denied</h1>
+            <p className="hero__subtitle">You must be logged in to view this content.</p>
+            <Link className="button button--secondary button--lg" to="/login">
+              Login to continue
+            </Link>
+          </div>
+        )}
+      </div>
     </>
   );
 }

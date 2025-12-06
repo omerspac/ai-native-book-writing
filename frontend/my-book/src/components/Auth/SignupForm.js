@@ -1,49 +1,30 @@
 import React, { useState } from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { useAuth } from '@site/src/auth/AuthContext';
 
-function SignupForm() {
+export default function SignupForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [softwareLevel, setSoftwareLevel] = useState('');
-  const [hardwareLevel, setHardwareLevel] = useState('');
+  const [softwareLevel, setSoftwareLevel] = useState('Beginner');
+  const [hardwareLevel, setHardwareLevel] = useState('Beginner');
   const [interestField, setInterestField] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { siteConfig } = useDocusaurusContext();
-  const backendUrl = siteConfig.customFields.backendUrl;
+  const { signup } = useAuth();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
 
-    const userData = {
-      email,
-      password,
-      profile: {
-        software_level: softwareLevel || null,
-        hardware_level: hardwareLevel || null,
-        interest_field: interestField || null,
-      },
+    const profile = {
+      software_level: softwareLevel,
+      hardware_level: hardwareLevel,
+      interest_field: interestField || 'AI', // Default interest
     };
 
     try {
-      const response = await fetch(`${backendUrl}/api/v1/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Signup failed');
-      }
-
-      const data = await response.json();
-      localStorage.setItem('access_token', data.access_token);
-      window.location.href = '/'; // Redirect to home page
+      await signup(email, password, profile);
+      // Redirect is now handled by AuthContext on successful signup/login
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,86 +33,82 @@ function SignupForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="signup-form">
-      <h2>Signup</h2>
-      {error && <div className="alert alert--danger">{error}</div>}
-      <div className="margin-bottom--md">
+    <form onSubmit={handleSubmit}>
+      {error && (
+        <div className="alert alert--danger" role="alert">
+          {error}
+        </div>
+      )}
+      <div className="form-field">
         <label htmlFor="email">Email</label>
         <input
           type="email"
           id="email"
-          name="email"
-          className="input input--lg"
+          className="input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
         />
       </div>
-      <div className="margin-bottom--md">
+      <div className="form-field">
         <label htmlFor="password">Password</label>
         <input
           type="password"
           id="password"
-          name="password"
-          className="input input--lg"
+          className="input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="new-password"
         />
       </div>
 
-      {/* Background Survey Fields */}
-      <fieldset className="margin-bottom--md">
-        <legend>Background Survey</legend>
-        <div className="margin-bottom--sm">
+      <fieldset>
+        <legend>Personalize Your Experience</legend>
+        <div className="form-field">
           <label htmlFor="softwareLevel">Software Background</label>
           <select
             id="softwareLevel"
-            name="softwareLevel"
-            className="select input--lg"
+            className="select"
             value={softwareLevel}
-            onChange={(e) => setSoftwareLevel(e.target.value)}
-          >
-            <option value="">Select an option</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
+            onChange={(e) => setSoftwareLevel(e.target.value)}>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
           </select>
         </div>
-        <div className="margin-bottom--sm">
+        <div className="form-field">
           <label htmlFor="hardwareLevel">Hardware Background</label>
           <select
             id="hardwareLevel"
-            name="hardwareLevel"
-            className="select input--lg"
+            className="select"
             value={hardwareLevel}
-            onChange={(e) => setHardwareLevel(e.target.value)}
-          >
-            <option value="">Select an option</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
+            onChange={(e) => setHardwareLevel(e.target.value)}>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
           </select>
         </div>
-        <div>
+        <div className="form-field">
           <label htmlFor="interestField">Field of Interest</label>
           <input
             type="text"
             id="interestField"
-            name="interestField"
-            className="input input--lg"
+            className="input"
             value={interestField}
             onChange={(e) => setInterestField(e.target.value)}
-            placeholder="e.g., AI, Robotics, Web, Embedded"
+            placeholder="e.g., Robotics, Web Dev, Data Science"
           />
         </div>
       </fieldset>
 
-      <button type="submit" className="button button--primary button--block" disabled={loading}>
-        {loading ? 'Signing up...' : 'Signup'}
+      <button
+        type="submit"
+        className="button button--primary button--block auth-submit-button"
+        disabled={loading}>
+        {loading ? 'Creating Account...' : 'Sign Up'}
       </button>
     </form>
   );
 }
-
-export default SignupForm;
