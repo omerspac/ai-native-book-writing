@@ -23,12 +23,14 @@ class UserProfile(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     
-    experience_level = Column(
-        SQLAlchemyEnum("Beginner", "Intermediate", "Expert", name="experience_level_enum"), 
+    software_level = Column(
+        SQLAlchemyEnum("Beginner", "Intermediate", "Advanced", name="software_level_enum"), 
         nullable=True
     )
-    learning_goal = Column(String, nullable=True)
-    software_experience = Column(JSON, default={}) # e.g., {"languages": ["Python", "JS"], "frameworks": ["FastAPI", "React"]}
-    hardware_experience = Column(JSON, default={}) # e.g., {"types": ["PC", "GPU"], "details": "NVIDIA RTX 4090"}
+    hardware_level = Column(
+        SQLAlchemyEnum("Beginner", "Intermediate", "Advanced", name="hardware_level_enum"), 
+        nullable=True
+    )
+    interest_field = Column(String, nullable=True)
     
     user = relationship("User", back_populates="profile")

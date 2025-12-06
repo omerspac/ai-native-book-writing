@@ -21,6 +21,7 @@ const config: Config = {
   baseUrl: '/ai-native-book-writing/',
   customFields: {
     homepage: 'https://omerspac.github.io/ai-native-book-writing/',
+    backendUrl: 'http://localhost:8000',
   },
 
   // GitHub pages deployment config.
