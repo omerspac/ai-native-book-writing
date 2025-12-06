@@ -1,0 +1,5 @@
+/* Add any custom styles for your LanguageSwitcher component here */
+.dropdown__link--active {
+  font-weight: bold;
+  color: var(--ifm-color-primary);
+}

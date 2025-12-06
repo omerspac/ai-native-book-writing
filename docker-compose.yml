@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app # Mount the backend code for live reloading during development
+    depends_on:
+      - qdrant
+      - postgres
+    env_file:
+      - .env # Load environment variables from .env file
+    restart: on-failure
+
+  # Qdrant Vector Database Service
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333" # Qdrant HTTP API
+      - "6334:6334" # Qdrant gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage # Persist Qdrant data
+    environment:
+      QDRANT_GRPC_PORT: 6334
+      QDRANT_HTTP_PORT: 6333
+    restart: on-failure
+
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist PostgreSQL data
+    env_file:
+      - .env # Load environment variables for PostgreSQL (POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD)
+    restart: on-failure
+
+volumes:
+  qdrant_data:
+  postgres_data:
