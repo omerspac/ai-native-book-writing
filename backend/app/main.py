@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.api.v1.api import api_router
+from backend.app.api.v1.endpoints.chat import router as chat_router
 
 app = FastAPI(
     title="AI-Native Book Platform API",
@@ -33,6 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(chat_router)
 
 @app.get("/", tags=["Root"])
 def read_root():

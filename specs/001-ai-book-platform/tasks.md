@@ -58,9 +58,9 @@ This document outlines the development tasks for the AI-Native Book Platform, br
 
 ### Tasks
 
-- [ ] T017 [US3] Implement a service in `backend/app/services/qdrant_service.py` to configure and connect to the Qdrant Cloud client.
-- [ ] T018 [US3] Create a content pipeline script in `scripts/embed_content.py` that reads docs from `frontend/docs/`, generates embeddings, and upserts them into Qdrant.
-- [ ] T019 [US3] Implement the `/chat` endpoint logic in `backend/app/api/v1/endpoints/chat.py`, which uses the Qdrant service and a Gemini agent to generate responses.
+- [X] T017 [US3] Implement a service in `backend/app/db/postgres_client.py` to configure and connect to the Neon Postgres client for pgvector.
+- [X] T018 [US3] Create a content pipeline script in `scripts/embed_content.py` that reads docs from `frontend/docs/`, generates embeddings, and upserts them into PostgreSQL with pgvector.
+- [X] T019 [US3] Implement the `/chat` endpoint logic in `backend/app/api/v1/endpoints/chat.py`, which uses the PostgreSQL pgvector service and a Gemini agent to generate responses.
 - [ ] T020 [P] [US3] Create a reusable chat widget component in `frontend/src/components/ChatWidget/index.js`.
 - [ ] T021 [P] [US3] Add the `ChatWidget` to the Docusaurus layout and connect it to the `/chat` API endpoint.
 

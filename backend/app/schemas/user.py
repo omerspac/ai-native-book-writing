@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 from enum import Enum
-import uuid # Import uuid
+import uuid
 
 class SoftwareLevel(str, Enum):
     beginner = "Beginner"
@@ -17,3 +17,20 @@ class UserProfileCreate(BaseModel):
     software_level: Optional[SoftwareLevel] = None
     hardware_level: Optional[HardwareLevel] = None
     interest_field: Optional[str] = None
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    email: EmailStr
+    is_active: bool
+    profile: Optional[UserProfileCreate] = None
+
+    class Config:
+        from_attributes = True
