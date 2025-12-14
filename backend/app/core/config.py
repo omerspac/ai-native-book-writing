@@ -10,7 +10,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL") or os.getenv("NEON_DB_URL")
     QDRANT_API_KEY: str = os.getenv("QDRANT_API_KEY")
     QDRANT_HOST: str = os.getenv("QDRANT_HOST") or os.getenv("QDRANT_URL")
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+    QWEN_API_KEY: str = ""
+    QWEN_API_ENDPOINT: str = ""
+    RAG_RETRIEVAL_LIMIT: int = 5
     BETTER_AUTH_SECRET: str = os.getenv("BETTER_AUTH_SECRET") or os.getenv("SECRET_KEY")
     SECRET_KEY: str = os.getenv("BETTER_AUTH_SECRET") or os.getenv("SECRET_KEY")
 

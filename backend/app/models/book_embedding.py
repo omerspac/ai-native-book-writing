@@ -7,4 +7,4 @@ class BookEmbedding(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     chunk_text = Column(Text, nullable=False)
-    embedding = Column(Vector(768))
+    embedding = Column(Vector(384))
