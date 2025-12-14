@@ -43,7 +43,7 @@ def assemble_product_step(product_blueprint, current_stage):
     else:
         print(f"خرابی: {required_component.type} نہیں ملا")
         return "خرابی"
-
+```
 
 # اس کے لیے مضبوط خرابی سے نمٹنے، ناکامی سے سیکھنے، اور انسانی نگرانی کی ضرورت ہے۔
 

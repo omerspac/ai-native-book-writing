@@ -2,6 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import URL # NEW IMPORT
 from backend.app.core.config import settings
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 # Create the SQLAlchemy engine
 # The DATABASE_URL is loaded from environment variables via Pydantic settings

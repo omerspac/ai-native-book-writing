@@ -1,192 +1,117 @@
+# backend/app/rag/rag_pipeline.py
 import os
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from qdrant_client import models
 
-# Assuming qdrant_client and postgres_client are in sibling directories or properly imported
-from backend.app.db.qdrant_client import QdrantVectorClient
-from backend.app.db.postgres_client import PostgresClient
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings # Import for HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 
 load_dotenv()
 
 class RAGPipeline:
     """
     Manages the Retrieval-Augmented Generation (RAG) pipeline for book chapters.
-    Handles document loading, chunking, embedding generation, and storage in Qdrant
-    with metadata in PostgreSQL.
+    Handles document loading, chunking, embedding generation, and storage in an in-memory FAISS vectorstore.
     """
-    def __init__(self,
-                 qdrant_collection_name: str = "book_embeddings",
-                 embedding_model_name: str = "models/embedding-001"):
-        self.qdrant_client = QdrantVectorClient(collection_name=qdrant_collection_name)
-        self.postgres_client = PostgresClient()
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
-        if not self.google_api_key:
-            raise ValueError("GOOGLE_API_KEY must be set in .env file")
-        self.embeddings_model = GoogleGenerativeAIEmbeddings(model=embedding_model_name, google_api_key=self.google_api_key)
+    def __init__(self):
+        self.embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2") # Use HuggingFaceEmbeddings
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=500,
+            chunk_overlap=50,
             length_function=len,
             is_separator_regex=False,
         )
+        self.vectorstore: Optional[FAISS] = None
 
-    async def _load_and_split_chapter(self, file_path: str) -> List[Dict]:
+    def ingest_chapter(self, file_path: str):
         """
-        Loads a Markdown chapter file and splits it into chunks.
-        Extracts chapter_id, title, and subtitle from the Docusaurus frontmatter.
+        Ingests a single book chapter: loads, chunks, generates embeddings,
+        and stores them in the in-memory FAISS vectorstore.
         """
+        print(f"Ingesting chapter: {file_path}")
         try:
             loader = TextLoader(file_path)
             documents = loader.load()
             
             if not documents:
                 print(f"No content found in {file_path}")
-                return []
+                return
 
-            # Extract frontmatter info for metadata
+            # Extract frontmatter info for metadata (simplified for FAISS Document metadata)
             chapter_id = os.path.basename(file_path).split('.')[0]
-            title = None
-            subtitle = None
-            # Basic frontmatter parsing (assuming Docusaurus-like structure)
-            content_lines = documents[0].page_content.splitlines()
-            if content_lines and content_lines[0].strip() == '---':
-                for i, line in enumerate(content_lines[1:], 1):
-                    if line.strip() == '---':
-                        break
-                    if line.startswith('id:'):
-                        chapter_id = line.split('id:', 1)[1].strip()
-                    elif line.startswith('title:'):
-                        title = line.split('title:', 1)[1].strip()
-                    elif line.startswith('subtitle:'):
-                        subtitle = line.split('subtitle:', 1)[1].strip()
             
             # Use Langchain's text splitter
             chunks = self.text_splitter.split_documents(documents)
             
-            processed_chunks = []
+            # Prepare documents for FAISS
+            faiss_docs = []
             for i, chunk in enumerate(chunks):
-                processed_chunks.append({
-                    "text": chunk.page_content,
-                    "metadata": {
+                # Using page_content for text, and adding basic metadata
+                doc = Document(
+                    page_content=chunk.page_content,
+                    metadata={
                         "chapter_id": chapter_id,
                         "file_path": file_path,
-                        "title": title,
-                        "subtitle": subtitle,
-                        "chunk_id": f"{chapter_id}_chunk_{i}",
                         "chunk_index": i,
                         "word_count": len(chunk.page_content.split())
                     }
-                })
+                )
+                faiss_docs.append(doc)
             
-            # Store overall chapter metadata in Postgres
-            self.postgres_client.store_chapter_metadata(
-                chapter_id=chapter_id,
-                file_path=file_path,
-                title=title,
-                subtitle=subtitle,
-                word_count=len(documents[0].page_content.split()) # Total word count of chapter
-            )
-            
-            return processed_chunks
-        except Exception as e:
-            print(f"Error loading and splitting chapter {file_path}: {e}")
-            return []
+            if not faiss_docs:
+                print(f"No processable chunks for {file_path}.")
+                return
 
-    async def _generate_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """
-        Generates embeddings for a list of text chunks using the configured model.
-        """
-        try:
-            embeddings = await self.embeddings_model.aembed_documents(texts)
-            return embeddings
-        except Exception as e:
-            print(f"Error generating embeddings: {e}")
-            return []
-
-    async def ingest_chapter(self, file_path: str):
-        """
-        Ingests a single book chapter: loads, chunks, generates embeddings,
-        and stores them in Qdrant, with metadata in Postgres.
-        """
-        print(f"Ingesting chapter: {file_path}")
-        chunks_data = await self._load_and_split_chapter(file_path)
-        if not chunks_data:
-            print(f"No chunks to ingest for {file_path}.")
-            return
-
-        texts = [chunk["text"] for chunk in chunks_data]
-        metadatas = [chunk["metadata"] for chunk in chunks_data]
-        
-        embeddings = await self._generate_embeddings(texts)
-        
-        if embeddings and len(embeddings) == len(texts):
-            # Qdrant upsert expects list of vectors and list of payloads
-            # Extract chunk_id for Qdrant point IDs if available
-            qdrant_ids = [metadata["chunk_id"] for metadata in metadatas]
-            self.qdrant_client.upsert_vectors(
-                vectors=embeddings,
-                payloads=metadatas,
-                ids=qdrant_ids
-            )
-            print(f"Successfully ingested {len(embeddings)} chunks from {file_path} into Qdrant.")
-        else:
-            print(f"Failed to generate embeddings for all chunks in {file_path}.")
-
-    async def retrieve_relevant_chunks(self, query: str, limit: int = 5) -> List[Dict]:
-        """
-        Generates an embedding for a query and retrieves relevant text chunks from Qdrant.
-        """
-        print(f"Retrieving relevant chunks for query: '{query}'")
-        query_embedding = (await self.embeddings_model.aembed_documents([query]))[0]
-        if not query_embedding:
-            print("Failed to generate embedding for the query.")
-            return []
-
-        search_results = self.qdrant_client.query_vectors(query_embedding, limit=limit)
-        
-        # Format results for consumption
-        relevant_chunks = []
-        for hit in search_results:
-            relevant_chunks.append({
-                "text": hit.payload.get("text"),
-                "chapter_id": hit.payload.get("chapter_id"),
-                "chunk_id": hit.payload.get("chunk_id"),
-                "score": hit.score
-            })
-        return relevant_chunks
-
-if __name__ == "__main__":
-    import asyncio
-
-    # Ensure .env has GOOGLE_API_KEY, QDRANT_URL, QDRANT_API_KEY, NEON_DB_URL
-    # For testing, you might want to point to specific local files or mock dependencies
-    
-    # Example usage:
-    async def main():
-        try:
-            rag_pipeline = RAGPipeline()
-
-            # Ingest a dummy chapter (replace with actual path)
-            dummy_chapter_path = "frontend/my-book/docs/chapter1.md"
-            if not os.path.exists(dummy_chapter_path):
-                print(f"Dummy chapter not found at {dummy_chapter_path}. Skipping ingestion test.")
+            # Create or update FAISS vectorstore
+            if self.vectorstore is None:
+                self.vectorstore = FAISS.from_documents(faiss_docs, self.embeddings_model) # Pass HuggingFaceEmbeddings
             else:
-                await rag_pipeline.ingest_chapter(dummy_chapter_path)
+                self.vectorstore.add_documents(faiss_docs) # add_documents uses the internally stored embeddings_model
+            
+            print(f"Successfully ingested {len(faiss_docs)} chunks from {file_path} into FAISS.")
 
-            # Perform a dummy query
-            query = "What is Physical AI?"
-            relevant_chunks = await rag_pipeline.retrieve_relevant_chunks(query)
-
-            print("\n--- Retrieved Chunks for Query ---")
-            for chunk in relevant_chunks:
-                print(f"Score: {chunk['score']:.2f}, Chapter: {chunk['chapter_id']}, Text: {chunk['text'][:150]}...")
-        except ValueError as e:
-            print(f"Configuration error: {e}")
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            print(f"Error ingesting chapter {file_path}: {e}")
 
-    asyncio.run(main())
+    def answer_question(self, question: str) -> str:
+        """
+        Retrieves relevant text chunks from FAISS and returns a text answer.
+        Filters results based on a relevance score threshold.
+        """
+        print(f"Answering question: '{question}'")
+
+        # Handle simple greetings
+        greetings = ["hello", "hi", "hey", "greetings"]
+        # A simple check if any greeting word is in the question.
+        if any(word in question.lower().split() for word in greetings):
+            return "Hello! How can I help you today with the content of the book?"
+
+        if self.vectorstore is None:
+            return "No book content has been ingested yet. Please ingest chapters first."
+
+        # Retrieve relevant documents from FAISS with their relevance scores
+        # FAISS returns L2 distance; lower scores are better.
+        results_with_scores = self.vectorstore.similarity_search_with_score(question, k=4)
+        
+        if not results_with_scores:
+            return "I could not find any information related to your question in the book."
+
+        # Define a relevance threshold for L2 distance. This may need tuning.
+        relevance_threshold = 1.0  
+
+        # Filter documents based on the score
+        relevant_docs = [doc for doc, score in results_with_scores if score < relevance_threshold]
+
+        if not relevant_docs:
+            return "I searched the book content, but could not find a relevant answer to your question."
+
+        # Concatenate relevant content to form an answer
+        context = "\n\n".join([doc.page_content for doc in relevant_docs])
+        
+        # Present the found context clearly
+        answer = f"Based on the book content, here is what I found related to your question:\n\n{context}"
+        
+        return answer

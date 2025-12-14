@@ -1,171 +1,118 @@
 import os
-import psycopg2
+import numpy as np
 from dotenv import load_dotenv
+from sqlalchemy import text, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.app.core.database import AsyncSessionLocal, engine, Base
+from backend.app.models.book_embedding import BookEmbedding
 
 # Load environment variables from .env file
 load_dotenv()
 
 class PostgresClient:
     """
-    A client for connecting to Neon Serverless Postgres and managing book embedding metadata.
+    A client for connecting to Neon Serverless Postgres and managing book embeddings using SQLAlchemy AsyncSession.
     """
     def __init__(self):
-        self.conn = None
-        self.db_url = os.getenv("NEON_DB_URL") # Example: "postgresql://user:password@host:port/dbname"
-        # Or individual components if preferred:
-        # self.db_host = os.getenv("PG_HOST")
-        # self.db_user = os.getenv("PG_USER")
-        # self.db_password = os.getenv("PG_PASSWORD")
-        # self.db_name = os.getenv("PG_DBNAME")
-        self.connect()
+        # The session will be managed by FastAPI's dependency injection or passed directly to methods
+        pass
 
-    def connect(self):
-        """Establishes a connection to the PostgreSQL database."""
-        if self.conn is None or self.conn.closed:
-            try:
-                if self.db_url:
-                    self.conn = psycopg2.connect(self.db_url)
-                # else: # If using individual components
-                #     self.conn = psycopg2.connect(
-                #         host=self.db_host,
-                #         user=self.db_user,
-                #         password=self.db_password,
-                #         dbname=self.db_name
-                #     )
-                self.conn.autocommit = True
-                print("Connected to PostgreSQL successfully!")
-                self._create_metadata_table() # Ensure table exists
-            except psycopg2.Error as e:
-                print(f"Error connecting to PostgreSQL: {e}")
-                self.conn = None
+    async def _create_embeddings_table(self):
+        """Creates the book_embeddings table if it doesn't exist. This should ideally be called once on startup."""
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        print("Table 'book_embeddings' and 'vector' extension checked/created successfully.")
 
-    def _create_metadata_table(self):
-        """Creates the book_embedding_metadata table if it doesn't exist."""
-        if not self.conn:
-            print("Cannot create table: Not connected to database.")
-            return
-
-        try:
-            with self.conn.cursor() as cur:
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS book_embedding_metadata (
-                        id SERIAL PRIMARY KEY,
-                        chapter_id VARCHAR(255) NOT NULL UNIQUE,
-                        file_path VARCHAR(512) NOT NULL,
-                        title VARCHAR(512),
-                        subtitle VARCHAR(512),
-                        word_count INTEGER,
-                        embedding_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-                """)
-            print("Table 'book_embedding_metadata' checked/created successfully.")
-        except psycopg2.Error as e:
-            print(f"Error creating table 'book_embedding_metadata': {e}")
-
-    def store_chapter_metadata(self, chapter_id: str, file_path: str, title: str = None, subtitle: str = None, word_count: int = None):
+    async def upsert_embedding(self, session: AsyncSession, chunk_text: str, embedding: np.ndarray):
         """
-        Stores or updates metadata for a book chapter.
+        Stores a text chunk and its corresponding embedding.
 
         Args:
-            chapter_id (str): Unique identifier for the chapter (e.g., "chapter1").
-            file_path (str): The file path to the Markdown chapter.
-            title (str, optional): The title of the chapter.
-            subtitle (str, optional): The subtitle of the chapter.
-            word_count (int, optional): The word count of the chapter.
+            session (AsyncSession): The SQLAlchemy async session.
+            chunk_text (str): The text chunk from the book.
+            embedding (np.ndarray): The embedding vector for the chunk.
         """
-        if not self.conn:
-            print("Cannot store metadata: Not connected to database.")
-            return False
-
         try:
-            with self.conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO book_embedding_metadata (chapter_id, file_path, title, subtitle, word_count)
-                    VALUES (%s, %s, %s, %s, %s)
-                    ON CONFLICT (chapter_id) DO UPDATE SET
-                        file_path = EXCLUDED.file_path,
-                        title = EXCLUDED.title,
-                        subtitle = EXCLUDED.subtitle,
-                        word_count = EXCLUDED.word_count,
-                        embedding_timestamp = CURRENT_TIMESTAMP;
-                """, (chapter_id, file_path, title, subtitle, word_count))
-            print(f"Metadata for chapter '{chapter_id}' stored/updated successfully.")
+            new_embedding = BookEmbedding(chunk_text=chunk_text, embedding=embedding)
+            session.add(new_embedding)
+            await session.commit()
+            await session.refresh(new_embedding)
             return True
-        except psycopg2.Error as e:
-            print(f"Error storing metadata for chapter '{chapter_id}': {e}")
+        except Exception as e:
+            print(f"Error storing embedding: {e}")
+            await session.rollback()
             return False
 
-    def get_chapter_metadata(self, chapter_id: str):
+    async def search_embeddings(self, session: AsyncSession, query_embedding: np.ndarray, top_k: int = 5):
         """
-        Retrieves metadata for a specific book chapter.
+        Searches for the most similar text chunks based on a query embedding.
 
         Args:
-            chapter_id (str): Unique identifier for the chapter.
+            session (AsyncSession): The SQLAlchemy async session.
+            query_embedding (np.ndarray): The embedding of the user's query.
+            top_k (int): The number of similar chunks to retrieve.
 
         Returns:
-            dict or None: A dictionary containing chapter metadata, or None if not found.
+            list or None: A list of dictionaries, each containing the chunk_text and similarity_score.
         """
-        if not self.conn:
-            print("Cannot retrieve metadata: Not connected to database.")
-            return None
-
         try:
-            with self.conn.cursor() as cur:
-                cur.execute(
-                    "SELECT chapter_id, file_path, title, subtitle, word_count, embedding_timestamp FROM book_embedding_metadata WHERE chapter_id = %s;",
-                    (chapter_id,)
-                )
-                result = cur.fetchone()
-                if result:
-                    return {
-                        "chapter_id": result[0],
-                        "file_path": result[1],
-                        "title": result[2],
-                        "subtitle": result[3],
-                        "word_count": result[4],
-                        "embedding_timestamp": result[5]
-                    }
-                return None
-        except psycopg2.Error as e:
-            print(f"Error retrieving metadata for chapter '{chapter_id}': {e}")
-            return None
+            # Use the pgvector operator for similarity search
+            # 'embedding.max_inner_product(query_embedding)' is for cosine similarity when normalized
+            # For exact cosine distance, it's 'embedding.cosine_distance(query_embedding)'
+            # Let's use cosine distance for now. Lower distance is better.
+            
+            # Ensure the vector extension is created before running queries that use it
+            # This is already handled in _create_embeddings_table
 
-    def close(self):
-        """Closes the database connection."""
-        if self.conn:
-            self.conn.close()
-            print("PostgreSQL connection closed.")
-            self.conn = None
+            # The query_embedding from the model is already a numpy array, ensure it's compatible
+            
+            stmt = (
+                select(
+                    BookEmbedding.chunk_text,
+                    (BookEmbedding.embedding.cosine_distance(query_embedding)).label("distance")
+                )
+                .order_by(BookEmbedding.embedding.cosine_distance(query_embedding))
+                .limit(top_k)
+            )
+            
+            result = await session.execute(stmt)
+            rows = result.fetchall()
+            
+            return [{"text": row.chunk_text, "score": 1 - row.distance} for row in rows] # 1 - distance to get similarity score
+        except Exception as e:
+            print(f"Error searching embeddings: {e}")
+            return None
 
 if __name__ == "__main__":
-    # Example Usage (requires .env with NEON_DB_URL or PG_HOST, PG_USER, PG_PASSWORD, PG_DBNAME)
-    db_client = PostgresClient()
+    import asyncio
 
-    # Store some dummy metadata
-    db_client.store_chapter_metadata(
-        chapter_id="chapter1",
-        file_path="frontend/my-book/docs/chapter1.md",
-        title="The Convergence",
-        subtitle="Physical AI and Humanoid Robotics",
-        word_count=1800
-    )
+    async def main():
+        db_client = PostgresClient()
+        
+        # This part should ideally be handled by create_db_and_tables on startup
+        # await db_client._create_embeddings_table() 
 
-    db_client.store_chapter_metadata(
-        chapter_id="chapter2",
-        file_path="frontend/my-book/docs/chapter2.md",
-        title="Core AI for Embodied Systems",
-        subtitle="Perception, Cognition, and Control",
-        word_count=2000
-    )
+        async with AsyncSessionLocal() as session:
+            # Example: Upsert some dummy embeddings
+            dummy_text_1 = "This is the first sentence for the test about AI."
+            dummy_embedding_1 = np.random.rand(768)
+            await db_client.upsert_embedding(session, dummy_text_1, dummy_embedding_1)
 
-    # Retrieve metadata
-    metadata = db_client.get_chapter_metadata("chapter1")
-    if metadata:
-        print("\nRetrieved Chapter 1 Metadata:")
-        print(metadata)
+            dummy_text_2 = "This is a second, different sentence about machine learning."
+            dummy_embedding_2 = np.random.rand(768)
+            await db_client.upsert_embedding(session, dummy_text_2, dummy_embedding_2)
 
-    metadata = db_client.get_chapter_metadata("non_existent_chapter")
-    if not metadata:
-        print("\nRetrieved metadata for 'non_existent_chapter': Not found as expected.")
+            # Example: Search for similar embeddings
+            query_embedding = np.random.rand(768)
+            search_results = await db_client.search_embeddings(session, query_embedding, top_k=2)
 
-    db_client.close()
+            if search_results:
+                print("\nSearch Results:")
+                for result in search_results:
+                    print(f"Text: {result['text']}, Similarity Score: {result['score']:.4f}")
+            else:
+                print("No search results found.")
+
+    asyncio.run(main())

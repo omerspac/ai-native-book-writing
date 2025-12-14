@@ -2,10 +2,11 @@
 sidebar_position: 1
 ---
 
-# Introduction to the AI-Native Book Platform
+# AI-نیٹو بک پلیٹ فارم کا تعارف
 
-Welcome to the AI-Native Book Platform! This platform allows you to read, personalize, and translate book chapters.
+AI-نیٹو بک پلیٹ فارم میں خوش آمدید! یہ پلیٹ فارم آپ کو کتاب کے ابواب پڑھنے، حسبِ منشاء مواد کو ذاتی بنانے، اور تراجم تک رسائی فراہم کرتا ہے۔
 
-To get started:
-1. Explore the chapters in the sidebar.
-2. Log in or sign up to personalize content and access translations.
+## شروعات کیسے کریں
+
+1. سائیڈ بار میں موجود ابواب کو دریافت کریں۔
+2. مواد کو ذاتی بنائیں اور تراجم تک رسائی حاصل کریں۔

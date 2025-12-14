@@ -38,7 +38,6 @@ class TranslatedChapterResponse(BaseModel):
     original_content: str
     language: str
 
-
 @router.post("/query", response_model=QueryResponse)
 async def query_rag(request: QueryRequest):
     """

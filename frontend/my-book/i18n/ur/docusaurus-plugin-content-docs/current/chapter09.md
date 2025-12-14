@@ -45,6 +45,7 @@ class SharedAutonomyController:
         else:
             self.current_mode = "robot_autonomous"
             return self.robot_ai.generate_optimal_commands()
+```
 
 # متحرک ثالثی برائے لچکدار تعاون  
 یہ متحرک ثالثی سیاق و سباق اور صلاحیت کی بنیاد پر لچکدار تعاون کی اجازت دیتی ہے۔
