@@ -1,0 +1,75 @@
+/* ChapterCard.css */
+.chapter-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ensure cards in a row are same height */
+}
+
+.chapter-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.chapter-card-content {
+  padding: 24px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chapter-card-content h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.5rem;
+  /* Using a color that might fit a "book" theme */
+  color: #2c3e50; 
+}
+
+.chapter-card-content p {
+  font-size: 1rem;
+  color: #596a7a;
+  flex-grow: 1; /* Pushes the button to the bottom */
+}
+
+.chapter-card-button {
+  display: inline-block;
+  background-color: #3498db;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  align-self: flex-start; /* Align button to the left */
+  margin-top: 16px;
+}
+
+.chapter-card-button:hover {
+  background-color: #2980b9;
+  color: white; /* Prevent color change from theme defaults */
+  text-decoration: none;
+}
+
+/* Dark Mode Styles */
+[data-theme='dark'] .chapter-card {
+  border-color: #444;
+  background-color: #242526; /* Docusaurus's default dark card background */
+}
+
+[data-theme='dark'] .chapter-card:hover {
+  border-color: #666;
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .chapter-card-content h3 {
+  color: #e3e3e3;
+}
+
+[data-theme='dark'] .chapter-card-content p {
+  color: #b0b0b0;
+}

@@ -1,0 +1,55 @@
+/* homepage.css */
+.homepage-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.homepage-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.homepage-header h1 {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #1a2a3a; /* Dark blue for a professional feel */
+}
+
+.homepage-header p {
+  font-size: 1.25rem;
+  color: #596a7a;
+  max-width: 600px;
+  margin: 0.5rem auto 0;
+}
+
+[data-theme='dark'] .homepage-header h1 {
+  color: #e3e3e3;
+}
+
+[data-theme='dark'] .homepage-header p {
+  color: #b0b0b0;
+}
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+/* Responsive layout for tablets */
+@media (max-width: 996px) {
+  .chapter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Responsive layout for mobile */
+@media (max-width: 768px) {
+  .chapter-grid {
+    grid-template-columns: 1fr;
+  }
+  .homepage-header h1 {
+    font-size: 2.5rem;
+  }
+}

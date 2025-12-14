@@ -66,7 +66,6 @@ const config: Config = {
           position: 'left',
           label: 'Book',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
         // The AuthNavbarItem will be injected via a swizzled component,
         // so it does not appear here.
         {
@@ -93,7 +92,6 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            {label: 'Blog', to: '/blog'},
             {label: 'GitHub', href: 'https://github.com/omerspac/ai-native-book-writing'},
           ],
         },
